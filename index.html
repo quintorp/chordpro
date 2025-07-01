@@ -5,19 +5,13 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>ChordPro Viewer</title>
-
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="ChordPro Viewer" />
-
   <link rel="apple-touch-icon" href="icon.png" />
-
   <link rel="manifest" href="manifest.json" />
-
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" crossorigin="anonymous">
-
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
-
   <style>
     body {
       margin: 0;
@@ -94,6 +88,12 @@
     .control-pair .control-button {
       flex: 1;
     }
+    #clock {
+      font-size: 3rem;
+      font-weight: bold;
+      padding: 0.5rem;
+      text-align: center;
+    }
     #contentWrapper {
       width: 60%;
       display: flex;
@@ -104,7 +104,7 @@
       padding: 1rem;
       background: #333;
       display: flex;
-      justify-content: space-around;
+      justify-content: space-between;
       align-items: center;
       font-weight: bold;
       flex-wrap: wrap;
@@ -155,16 +155,20 @@
       <span id="capo">Capo:</span>
       <span id="key">Key:</span>
       <span id="tempo">Tempo:</span>
+      <span id="duration">Duration:</span>
     </div>
     <div id="lyricsPanel">Load a song file (CSV) to begin.</div>
   </div>
 
   <div id="rightBar">
-    <button class="control-button" onclick="loadSong(currentIndex - 1)"><i class="fas fa-arrow-left"></i></button>
-    <button class="control-button" onclick="loadSong(currentIndex + 1)"><i class="fas fa-arrow-right"></i></button>
-    <button class="control-button" onclick="toggleScroll()"><i class="fas fa-play"></i></button>
+    <button class="control-button" onclick="loadSong(currentIndex - 1)" id="prevBtn"></button>
+    <div id="currentSongTitle" style="text-align:center; font-weight:bold; padding:0.5rem;"></div>
+    <button class="control-button" onclick="loadSong(currentIndex + 1)" id="nextBtn"></button>
+    <button class="control-button" onclick="toggleScroll()" id="scrollBtn"><i class="fas fa-play"></i></button>
     <button class="control-button" onclick="scrollToSection(-1)"><i class="fas fa-chevron-up"></i></button>
     <button class="control-button" onclick="scrollToSection(1)"><i class="fas fa-chevron-down"></i></button>
+    <hr style="width:100%; border:0.5px solid #444;">
+    <div id="clock"></div>
     <hr style="width:100%; border:0.5px solid #444;">
     <div class="control-pair">
       <button class="control-button" onclick="adjustFont(1)">A+</button>
@@ -181,8 +185,8 @@
   </div>
 
   <script>
-
-    let songs = [], currentIndex = -1, scrollInterval = null, scrollSpeed = 1;
+    let songs = [], currentIndex = -1, scrollInterval = null;
+    const scrollDelay = 10000;
 
     function loadCSV(event) {
       const file = event.target.files[0];
@@ -221,6 +225,10 @@
       document.getElementById('capo').textContent = 'Capo: ' + (song.Capo || '');
       document.getElementById('key').textContent = 'Key: ' + (song.Key || '');
       document.getElementById('tempo').textContent = 'Tempo: ' + (song.Tempo || '');
+      document.getElementById('duration').textContent = 'Duration: ' + (song.Duration || '?');
+      document.getElementById('currentSongTitle').textContent = song.Title;
+      document.getElementById('prevBtn').textContent = songs[index - 1]?.Title || 'Prev';
+      document.getElementById('nextBtn').textContent = songs[index + 1]?.Title || 'Next';
       const html = formatLyrics(song.Lyrics || '');
       document.getElementById('lyricsPanel').innerHTML = html;
       renderSongButtons();
@@ -229,32 +237,51 @@
 
     function formatLyrics(text) {
       let lines = text.split(/\r?\n/);
-      let html = '';
-      let currentSection = '';
+      let html = '', sectionOpen = false;
       lines.forEach((line) => {
         const sectionMatch = line.match(/\{c:\s*(.*?)\s*\}/i);
         if (sectionMatch) {
-          currentSection = sectionMatch[1];
-          html += `<div class="section"><div class="section-label">${currentSection}</div>`;
+          if (sectionOpen) html += '</div>';
+          sectionOpen = true;
+          html += `<div class="section"><div class="section-label">${sectionMatch[1]}</div>`;
         } else {
           line = line.replace(/\s*\[([^\]]+)\]\s*/g, '<span class="chord">$1</span>');
           html += `<div>${line}</div>`;
         }
       });
+      if (sectionOpen) html += '</div>';
       return html;
     }
 
     function toggleScroll() {
-      if (scrollInterval) return stopScroll();
-      scrollInterval = setInterval(() => {
-        const panel = document.getElementById('lyricsPanel');
-        panel.scrollTop += scrollSpeed;
-      }, 100);
+      const btn = document.getElementById('scrollBtn');
+      if (scrollInterval) {
+        stopScroll();
+        btn.innerHTML = '<i class="fas fa-play"></i>';
+        return;
+      }
+      btn.innerHTML = '<i class="fas fa-pause"></i>';
+      const panel = document.getElementById('lyricsPanel');
+      const height = panel.scrollHeight - panel.clientHeight;
+      let durationSec = parseFloat(songs[currentIndex].Duration);
+      if (!durationSec) {
+        const lines = songs[currentIndex].Lyrics.split(/\r?\n/).length;
+        const tempo = parseInt(songs[currentIndex].Tempo || '80');
+        durationSec = Math.max(30, (lines / (tempo / 60)) * 1.5);
+      }
+      const speed = height / durationSec * 100; // pixels per second
+      setTimeout(() => {
+        scrollInterval = setInterval(() => {
+          panel.scrollTop += 1;
+          if (panel.scrollTop >= height) stopScroll();
+        }, 1000 / speed);
+      }, scrollDelay);
     }
 
     function stopScroll() {
       clearInterval(scrollInterval);
       scrollInterval = null;
+      document.getElementById('scrollBtn').innerHTML = '<i class="fas fa-play"></i>';
     }
 
     function scrollToSection(dir) {
@@ -291,6 +318,15 @@
       document.body.classList.toggle('light-mode');
     }
 
+    function updateClock() {
+      const now = new Date();
+      const h = now.getHours().toString().padStart(2, '0');
+      const m = now.getMinutes().toString().padStart(2, '0');
+      const s = now.getSeconds().toString().padStart(2, '0');
+      document.getElementById('clock').textContent = `${h}:${m}:${s}`;
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
   </script>
 
   <script>
