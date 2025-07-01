@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ChordPro Viewer</title>
+
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="ChordPro Viewer" />
+
+  <link rel="apple-touch-icon" href="icon.png" />
+
+  <link rel="manifest" href="manifest.json" />
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" crossorigin="anonymous">
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+
+  <style>
+    body {
+      margin: 0;
+      font-family: sans-serif;
+      display: flex;
+      flex-direction: row;
+      height: 100vh;
+      background-color: #111;
+      color: white;
+    }
+    #sidebar {
+      width: 20%;
+      background: #222;
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+    }
+    #fileInputLabel {
+      background: #555;
+      color: white;
+      font-size: 1.2rem;
+      padding: 1rem;
+      cursor: pointer;
+      text-align: center;
+      font-weight: bold;
+      border-bottom: 1px solid #444;
+    }
+    #songButtons {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      padding: 1rem;
+    }
+    .song-title-button {
+      font-size: 1rem;
+      font-weight: bold;
+      padding: 0.5rem;
+      background: #444;
+      color: white;
+      border: none;
+      cursor: pointer;
+      text-align: left;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .song-title-button.active-song {
+      background: #666;
+    }
+    #rightBar {
+      width: 20%;
+      background: #222;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 1rem;
+      gap: 1rem;
+    }
+    .control-button {
+      background: #555;
+      border: none;
+      color: white;
+      font-size: 1.2rem;
+      padding: 0.8rem;
+      cursor: pointer;
+      width: 100%;
+      text-align: center;
+    }
+    .control-pair {
+      display: flex;
+      width: 100%;
+      gap: 0.5rem;
+    }
+    .control-pair .control-button {
+      flex: 1;
+    }
+    #contentWrapper {
+      width: 60%;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+    #topBar {
+      padding: 1rem;
+      background: #333;
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      font-weight: bold;
+      flex-wrap: wrap;
+      z-index: 1;
+    }
+    #lyricsPanel {
+      padding: 1rem;
+      overflow-y: auto;
+      flex-grow: 1;
+      font-size: 1.3em;
+      line-height: 1.6em;
+      font-weight: bold;
+    }
+    .chord {
+      background-color: rgba(0, 123, 255, 0.3);
+      color: #fff;
+      padding: 0.1em 0.3em;
+      border-radius: 4px;
+      font-weight: bold;
+    }
+    .section {
+      background-color: rgba(255, 255, 255, 0.05);
+      padding: 0.5rem 0.5rem;
+      margin-bottom: 0.5rem;
+      border-radius: 6px;
+    }
+    .section-label {
+      text-align: right;
+      font-style: italic;
+      font-size: 0.9rem;
+      opacity: 0.7;
+    }
+    #fileInput {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div id="sidebar">
+    <label id="fileInputLabel" for="fileInput">Load Playlist</label>
+    <input type="file" id="fileInput" accept=".csv" onchange="loadCSV(event)">
+    <div id="songButtons"></div>
+  </div>
+
+  <div id="contentWrapper">
+    <div id="topBar">
+      <span id="title">Title</span>
+      <span id="capo">Capo:</span>
+      <span id="key">Key:</span>
+      <span id="tempo">Tempo:</span>
+    </div>
+    <div id="lyricsPanel">Load a song file (CSV) to begin.</div>
+  </div>
+
+  <div id="rightBar">
+    <button class="control-button" onclick="loadSong(currentIndex - 1)"><i class="fas fa-arrow-left"></i></button>
+    <button class="control-button" onclick="loadSong(currentIndex + 1)"><i class="fas fa-arrow-right"></i></button>
+    <button class="control-button" onclick="toggleScroll()"><i class="fas fa-play"></i></button>
+    <button class="control-button" onclick="scrollToSection(-1)"><i class="fas fa-chevron-up"></i></button>
+    <button class="control-button" onclick="scrollToSection(1)"><i class="fas fa-chevron-down"></i></button>
+    <hr style="width:100%; border:0.5px solid #444;">
+    <div class="control-pair">
+      <button class="control-button" onclick="adjustFont(1)">A+</button>
+      <button class="control-button" onclick="adjustFont(-1)">A-</button>
+    </div>
+    <div class="control-pair">
+      <button class="control-button" onclick="adjustLineHeight(1)"><i class="fas fa-plus"></i></button>
+      <button class="control-button" onclick="adjustLineHeight(-1)"><i class="fas fa-minus"></i></button>
+    </div>
+    <div class="control-pair">
+      <button class="control-button" onclick="toggleFullScreen()"><i class="fas fa-expand"></i></button>
+      <button class="control-button" onclick="toggleMode()"><i class="fas fa-adjust"></i></button>
+    </div>
+  </div>
+
+  <script>
+
+    let songs = [], currentIndex = -1, scrollInterval = null, scrollSpeed = 1;
+
+    function loadCSV(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      document.getElementById('fileInputLabel').textContent = file.name.replace(/\.[^/.]+$/, '');
+      Papa.parse(file, {
+        header: true,
+        skipEmptyLines: true,
+        complete: function(results) {
+          songs = results.data;
+          renderSongButtons();
+          loadSong(0);
+        }
+      });
+    }
+
+    function renderSongButtons() {
+      const sb = document.getElementById('songButtons');
+      sb.innerHTML = '';
+      songs.forEach((s, i) => {
+        const btn = document.createElement('button');
+        btn.textContent = s.Title;
+        btn.className = 'song-title-button';
+        if (i === currentIndex) btn.classList.add('active-song');
+        btn.onclick = () => loadSong(i);
+        sb.appendChild(btn);
+      });
+    }
+
+    function loadSong(index) {
+      if (index < 0 || index >= songs.length) return;
+      currentIndex = index;
+      stopScroll();
+      const song = songs[index];
+      document.getElementById('title').textContent = song.Title;
+      document.getElementById('capo').textContent = 'Capo: ' + (song.Capo || '');
+      document.getElementById('key').textContent = 'Key: ' + (song.Key || '');
+      document.getElementById('tempo').textContent = 'Tempo: ' + (song.Tempo || '');
+      const html = formatLyrics(song.Lyrics || '');
+      document.getElementById('lyricsPanel').innerHTML = html;
+      renderSongButtons();
+      document.getElementById('lyricsPanel').scrollTop = 0;
+    }
+
+    function formatLyrics(text) {
+      let lines = text.split(/\r?\n/);
+      let html = '';
+      let currentSection = '';
+      lines.forEach((line) => {
+        const sectionMatch = line.match(/\{c:\s*(.*?)\s*\}/i);
+        if (sectionMatch) {
+          currentSection = sectionMatch[1];
+          html += `<div class="section"><div class="section-label">${currentSection}</div>`;
+        } else {
+          line = line.replace(/\s*\[([^\]]+)\]\s*/g, '<span class="chord">$1</span>');
+          html += `<div>${line}</div>`;
+        }
+      });
+      return html;
+    }
+
+    function toggleScroll() {
+      if (scrollInterval) return stopScroll();
+      scrollInterval = setInterval(() => {
+        const panel = document.getElementById('lyricsPanel');
+        panel.scrollTop += scrollSpeed;
+      }, 100);
+    }
+
+    function stopScroll() {
+      clearInterval(scrollInterval);
+      scrollInterval = null;
+    }
+
+    function scrollToSection(dir) {
+      const sections = document.querySelectorAll('.section');
+      if (!sections.length) return;
+      const panel = document.getElementById('lyricsPanel');
+      const scrollTop = panel.scrollTop;
+      let target = null;
+      sections.forEach((s) => {
+        if (dir > 0 && s.offsetTop > scrollTop + 10 && !target) target = s;
+        if (dir < 0 && s.offsetTop < scrollTop - 10) target = s;
+      });
+      if (target) panel.scrollTop = target.offsetTop;
+    }
+
+    function adjustFont(delta) {
+      const panel = document.getElementById('lyricsPanel');
+      const size = parseFloat(getComputedStyle(panel).fontSize);
+      panel.style.fontSize = (size + delta * 2) + 'px';
+    }
+
+    function adjustLineHeight(delta) {
+      const panel = document.getElementById('lyricsPanel');
+      const lh = parseFloat(getComputedStyle(panel).lineHeight);
+      panel.style.lineHeight = (lh + delta * 0.2) + 'em';
+    }
+
+    function toggleFullScreen() {
+      if (!document.fullscreenElement) document.documentElement.requestFullscreen();
+      else if (document.exitFullscreen) document.exitFullscreen();
+    }
+
+    function toggleMode() {
+      document.body.classList.toggle('light-mode');
+    }
+
+  </script>
+
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker
+          .register('service-worker.js')
+          .then(reg => console.log('Service Worker registered:', reg.scope))
+          .catch(err => console.error('SW registration failed:', err));
+      });
+    }
+  </script>
+
+</body>
+</html>
