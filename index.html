@@ -216,10 +216,10 @@
         complete: function(results) {
           songs = results.data;
           renderSongButtons();
+          setSongDurations(songs);
           loadSong(0);
         }
       });
-      setSongDurations(songs);
     }
 
     function setSongDurations(songs) {
@@ -240,7 +240,7 @@
       }
 
       songs.forEach(song => {
-        if (!song.Duration || isNaN(song.Duration)) {
+       if (!song.Duration || isNaN(song.Duration)) {
           const lineCount = (song.Lyrics || '').split(/\r?\n/).length;
           song.Duration = Math.round(lineCount * averageTimePerLine);
         }
