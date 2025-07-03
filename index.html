@@ -12,6 +12,20 @@
   <link rel="manifest" href="manifest.json" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" crossorigin="anonymous">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+ <!DOCTYPE html>
+<html lang="en">
+<head>
+
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ChordPro Viewer</title>
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="ChordPro Viewer" />
+  <link rel="apple-touch-icon" href="icon.png" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" crossorigin="anonymous">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
   <style>
     body {
       margin: 0;
@@ -46,7 +60,7 @@
       padding: 1rem;
     }
     .song-title-button {
-      font-size: 1rem;
+      font-size: 1.5rem;
       font-weight: bold;
       padding: 0.5rem;
       background: #444;
@@ -89,7 +103,7 @@
       flex: 1;
     }
     #clock {
-      font-size: 3rem;
+      font-size: 2rem;
       font-weight: bold;
       padding: 0.5rem;
       text-align: center;
@@ -117,9 +131,12 @@
       font-size: 1.3em;
       line-height: 1.6em;
       font-weight: bold;
+      transition: line-height 0.2s ease;
+      max-height: 100%;
+      border: 2px solid red;
     }
     .chord {
-      background-color: rgba(0, 123, 255, 0.3);
+      background-color: #8B0000;
       color: #fff;
       padding: 0.1em 0.3em;
       border-radius: 4px;
@@ -133,9 +150,11 @@
     }
     .section-label {
       text-align: right;
-      font-style: italic;
-      font-size: 0.9rem;
-      opacity: 0.7;
+      font-style: normal;
+      font-size: 1.1rem;
+      font-weight: bold;
+      text-transform: uppercase;
+      opacity: 0.9;
     }
     #fileInput {
       display: none;
@@ -164,7 +183,7 @@
     <button class="control-button" onclick="loadSong(currentIndex - 1)" id="prevBtn"></button>
     <div id="currentSongTitle" style="text-align:center; font-weight:bold; padding:0.5rem;"></div>
     <button class="control-button" onclick="loadSong(currentIndex + 1)" id="nextBtn"></button>
-    <button class="control-button" onclick="toggleScroll()" id="scrollBtn"><i class="fas fa-play"></i></button>
+    <button class="control-button" onclick="toggleScroll(false)" id="scrollBtn"><i class="fas fa-play"></i></button>
     <button class="control-button" onclick="scrollToSection(-1)"><i class="fas fa-chevron-up"></i></button>
     <button class="control-button" onclick="scrollToSection(1)"><i class="fas fa-chevron-down"></i></button>
     <hr style="width:100%; border:0.5px solid #444;">
@@ -185,8 +204,7 @@
   </div>
 
   <script>
-    let songs = [], currentIndex = -1, scrollInterval = null;
-    const scrollDelay = 10000;
+    let songs = [], currentIndex = -1, scrollInterval = null, scrollTimeout = null;
 
     function loadCSV(event) {
       const file = event.target.files[0];
@@ -199,6 +217,32 @@
           songs = results.data;
           renderSongButtons();
           loadSong(0);
+        }
+      });
+      setSongDurations(songs);
+    }
+
+    function setSongDurations(songs) {
+      let totalTime = 0;
+      let totalLines = 0;
+
+      songs.forEach(song => {
+        const duration = parseFloat(song.Duration);
+        const lineCount = (song.Lyrics || '').split(/\r?\n/).length;
+        if (duration && lineCount) {
+          totalTime += duration;
+          totalLines += lineCount;
+        }
+      });
+
+      if (totalLines > 0) {
+        averageTimePerLine = totalTime / totalLines;
+      }
+
+      songs.forEach(song => {
+        if (!song.Duration || isNaN(song.Duration)) {
+          const lineCount = (song.Lyrics || '').split(/\r?\n/).length;
+          song.Duration = Math.round(lineCount * averageTimePerLine);
         }
       });
     }
@@ -219,7 +263,7 @@
     function loadSong(index) {
       if (index < 0 || index >= songs.length) return;
       currentIndex = index;
-      stopScroll();
+      stopScroll(true);
       const song = songs[index];
       document.getElementById('title').textContent = song.Title;
       document.getElementById('capo').textContent = 'Capo: ' + (song.Capo || '');
@@ -253,36 +297,42 @@
       return html;
     }
 
-    function toggleScroll() {
-      const btn = document.getElementById('scrollBtn');
-      if (scrollInterval) {
-        stopScroll();
-        btn.innerHTML = '<i class="fas fa-play"></i>';
-        return;
-      }
-      btn.innerHTML = '<i class="fas fa-pause"></i>';
-      const panel = document.getElementById('lyricsPanel');
-      const height = panel.scrollHeight - panel.clientHeight;
-      let durationSec = parseFloat(songs[currentIndex].Duration);
-      if (!durationSec) {
-        const lines = songs[currentIndex].Lyrics.split(/\r?\n/).length;
-        const tempo = parseInt(songs[currentIndex].Tempo || '80');
-        durationSec = Math.max(30, (lines / (tempo / 60)) * 1.5);
-      }
-      const speed = height / durationSec * 100; // pixels per second
-      setTimeout(() => {
-        scrollInterval = setInterval(() => {
-          panel.scrollTop += 1;
-          if (panel.scrollTop >= height) stopScroll();
-        }, 1000 / speed);
-      }, scrollDelay);
-    }
+function stopScroll() {
+  clearInterval(scrollInterval);
+  clearTimeout(scrollTimeout);
+  scrollInterval = null;
+  scrollTimeout = null;
+  const scrollBtn = document.getElementById('scrollBtn');
+  if (scrollBtn) scrollBtn.innerHTML = '<i class="fas fa-play"></i>';
+}
 
-    function stopScroll() {
-      clearInterval(scrollInterval);
-      scrollInterval = null;
-      document.getElementById('scrollBtn').innerHTML = '<i class="fas fa-play"></i>';
-    }
+function toggleScroll(loadSong = false) {
+  const panel = document.getElementById('lyricsPanel');
+  const scrollBtn = document.getElementById('scrollBtn');
+
+  if (scrollInterval || loadSong) {
+    stopScroll();
+    return;
+  }
+
+  scrollBtn.innerHTML = '<i class="fas fa-pause"></i>';
+  const totalScroll = panel.scrollHeight - panel.clientHeight;
+  const scrollDuration = Math.max(5, songs[currentIndex].Duration - 20);
+  const pixelsPerFrame = totalScroll / (scrollDuration * 60);
+  let scrollTop = panel.scrollTop;
+
+  console.log(pixelsPerFrame, panel.scrollTop >= totalScroll);
+
+  scrollTimeout = setTimeout(() => {
+    scrollInterval = setInterval(() => {
+      scrollTop += pixelsPerFrame;
+      panel.scrollTop = scrollTop;
+      if (panel.scrollTop >= totalScroll) {
+        stopScroll();
+      }
+    }, 1000 / 60);
+  }, 10000);
+}
 
     function scrollToSection(dir) {
       const sections = document.querySelectorAll('.section');
@@ -303,10 +353,11 @@
       panel.style.fontSize = (size + delta * 2) + 'px';
     }
 
+    let currentLineHeight = 1.6;
+
     function adjustLineHeight(delta) {
-      const panel = document.getElementById('lyricsPanel');
-      const lh = parseFloat(getComputedStyle(panel).lineHeight);
-      panel.style.lineHeight = (lh + delta * 0.2) + 'em';
+       currentLineHeight = Math.max(1, Math.min(currentLineHeight + delta * 0.2, 3));
+       document.getElementById('lyricsPanel').style.lineHeight = `${currentLineHeight}em`;
     }
 
     function toggleFullScreen() {
@@ -318,18 +369,18 @@
       document.body.classList.toggle('light-mode');
     }
 
-    function updateClock() {
-      const now = new Date();
-      const h = now.getHours().toString().padStart(2, '0');
-      const m = now.getMinutes().toString().padStart(2, '0');
-      const s = now.getSeconds().toString().padStart(2, '0');
-      document.getElementById('clock').textContent = `${h}:${m}:${s}`;
-    }
-    setInterval(updateClock, 1000);
-    updateClock();
-  </script>
+  function updateClock() {
+  const now = new Date();
+  let hours = now.getHours();
+  const minutes = now.getMinutes().toString().padStart(2, '0');
+  const ampm = hours >= 12 ? 'PM' : 'AM';
+  hours = hours % 12;
+  hours = hours ? hours : 12;
+  document.getElementById('clock').textContent = `${hours}:${minutes} ${ampm}`;
+}
+setInterval(updateClock, 1000);
+updateClock();
 
-  <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker
