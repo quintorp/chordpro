@@ -1,31 +1,21 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>ChordPro Viewer</title>
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="ChordPro Viewer" />
   <link rel="apple-touch-icon" href="icon.png" />
   <link rel="manifest" href="manifest.json" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" crossorigin="anonymous">
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    crossorigin="anonymous"
+  />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
- <!DOCTYPE html>
-<html lang="en">
-<head>
 
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ChordPro Viewer</title>
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="ChordPro Viewer" />
-  <link rel="apple-touch-icon" href="icon.png" />
-  <link rel="manifest" href="manifest.json" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" crossorigin="anonymous">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
   <style>
     body {
       margin: 0;
@@ -36,45 +26,6 @@
       background-color: #111;
       color: white;
     }
-    #sidebar {
-      width: 20%;
-      background: #222;
-      display: flex;
-      flex-direction: column;
-      overflow-y: auto;
-    }
-    #fileInputLabel {
-      background: #555;
-      color: white;
-      font-size: 1.2rem;
-      padding: 1rem;
-      cursor: pointer;
-      text-align: center;
-      font-weight: bold;
-      border-bottom: 1px solid #444;
-    }
-    #songButtons {
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-      padding: 1rem;
-    }
-    .song-title-button {
-      font-size: 1.5rem;
-      font-weight: bold;
-      padding: 0.5rem;
-      background: #444;
-      color: white;
-      border: none;
-      cursor: pointer;
-      text-align: left;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    .song-title-button.active-song {
-      background: #666;
-    }
     #rightBar {
       width: 20%;
       background: #222;
@@ -83,6 +34,7 @@
       align-items: center;
       padding: 1rem;
       gap: 1rem;
+      position: relative;
     }
     .control-button {
       background: #555;
@@ -93,6 +45,10 @@
       cursor: pointer;
       width: 100%;
       text-align: center;
+      user-select: none;
+    }
+    .control-button:hover {
+      background-color: #666;
     }
     .control-pair {
       display: flex;
@@ -103,26 +59,31 @@
       flex: 1;
     }
     #clock {
-      font-size: 2rem;
+      font-size: 3rem;
       font-weight: bold;
       padding: 0.5rem;
       text-align: center;
     }
+    #songInfoBox {
+      text-align: center;
+      font-size: 1.3rem;
+      min-height: 6rem;
+      width: 100%;
+      font-weight: bold;
+      line-height: 1.5;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      white-space: pre-line;
+    }
     #contentWrapper {
-      width: 60%;
+      width: 80%;
       display: flex;
       flex-direction: column;
       position: relative;
     }
     #topBar {
-      padding: 1rem;
-      background: #333;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-weight: bold;
-      flex-wrap: wrap;
-      z-index: 1;
+      display: none;
     }
     #lyricsPanel {
       padding: 1rem;
@@ -133,7 +94,6 @@
       font-weight: bold;
       transition: line-height 0.2s ease;
       max-height: 100%;
-      border: 2px solid red;
     }
     .chord {
       background-color: #8B0000;
@@ -159,74 +119,153 @@
     #fileInput {
       display: none;
     }
+    #playlistDropdown {
+      display: none;
+      overflow-y: auto;
+      position: absolute;
+      top: 3rem;
+      left: 0;
+      height: calc(100% - 3rem);
+      width: 100%;
+      background: #333;
+      border-top: 1px solid #444;
+      z-index: 1000;
+    }
+    #playlistDropdown button {
+      border: none;
+      background: #444;
+      color: white;
+      padding: 0.5rem;
+      text-align: left;
+      width: 100%;
+      font-size: 1rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      cursor: pointer;
+    }
+    #playlistDropdown button:hover,
+    #playlistDropdown button.active {
+      background-color: #666;
+    }
+    /* Move Load Playlist full width bottom */
+    #loadPlaylistWrapper {
+      margin-top: auto;
+      width: 100%;
+    }
   </style>
 </head>
-<body>
-  <div id="sidebar">
-    <label id="fileInputLabel" for="fileInput">Load Playlist</label>
-    <input type="file" id="fileInput" accept=".csv" onchange="loadCSV(event)">
-    <div id="songButtons"></div>
-  </div>
-
+<body onclick="hideDropdown(event)">
   <div id="contentWrapper">
-    <div id="topBar">
-      <span id="title">Title</span>
-      <span id="capo">Capo:</span>
-      <span id="key">Key:</span>
-      <span id="tempo">Tempo:</span>
-      <span id="duration">Duration:</span>
-    </div>
     <div id="lyricsPanel">Load a song file (CSV) to begin.</div>
   </div>
 
   <div id="rightBar">
-    <button class="control-button" onclick="loadSong(currentIndex - 1)" id="prevBtn"></button>
-    <div id="currentSongTitle" style="text-align:center; font-weight:bold; padding:0.5rem;"></div>
-    <button class="control-button" onclick="loadSong(currentIndex + 1)" id="nextBtn"></button>
-    <button class="control-button" onclick="toggleScroll(false)" id="scrollBtn"><i class="fas fa-play"></i></button>
-    <button class="control-button" onclick="scrollToSection(-1)"><i class="fas fa-chevron-up"></i></button>
-    <button class="control-button" onclick="scrollToSection(1)"><i class="fas fa-chevron-down"></i></button>
-    <hr style="width:100%; border:0.5px solid #444;">
+    <button class="control-button" id="playlistTitleBtn" onclick="togglePlaylistDropdown(event)">Playlist Title</button>
+    <div id="playlistDropdown"></div>
+    <button class="control-button" id="nextBtn" onclick="loadSong(currentIndex + 1)" title="Next Song">
+      Next: <span id="nextTitle">Song Title</span> <i class="fas fa-forward"></i>
+    </button>
     <div id="clock"></div>
-    <hr style="width:100%; border:0.5px solid #444;">
-    <div class="control-pair">
-      <button class="control-button" onclick="adjustFont(1)">A+</button>
-      <button class="control-button" onclick="adjustFont(-1)">A-</button>
+    <div id="songInfoBox"></div>
+
+    <div class="control-pair" style="margin-bottom:1rem;">
+      <button class="control-button" onclick="scrollToSection(1)" title="Next Section">
+        <i class="fas fa-chevron-down"></i>
+      </button>
+      <button
+        class="control-button"
+        id="autoPlayBtnTop"
+        onclick="toggleAutoPlay()"
+        title="Toggle Autoplay"
+      >
+        <i class="fas fa-play-circle"></i>
+      </button>
     </div>
+
+    <hr style="width:100%; border:0.5px solid #444;" />
+
     <div class="control-pair">
-      <button class="control-button" onclick="adjustLineHeight(1)"><i class="fas fa-plus"></i></button>
-      <button class="control-button" onclick="adjustLineHeight(-1)"><i class="fas fa-minus"></i></button>
+      <button class="control-button" onclick="adjustFont(1)" title="Increase Font Size">A+</button>
+      <button class="control-button" onclick="adjustFont(-1)" title="Decrease Font Size">A-</button>
     </div>
-    <div class="control-pair">
-      <button class="control-button" onclick="toggleFullScreen()"><i class="fas fa-expand"></i></button>
-      <button class="control-button" onclick="toggleMode()"><i class="fas fa-adjust"></i></button>
+
+    <div class="control-pair" style="margin-bottom:1rem;">
+      <button class="control-button" onclick="adjustLineHeight(1)" title="Increase Line Height">
+        <i class="fas fa-plus"></i>
+      </button>
+      <button class="control-button" onclick="adjustLineHeight(-1)" title="Decrease Line Height">
+        <i class="fas fa-minus"></i>
+      </button>
+    </div>
+
+    <hr style="width:100%; border:0.5px solid #444;" />
+
+    <div class="control-pair" style="gap: 0.5rem; align-items:center; width: 100%;">
+      <button
+        class="control-button"
+        onclick="toggleMode()"
+        title="Toggle Light/Dark Mode"
+        style="flex:1;"
+      >
+        <i class="fas fa-adjust"></i>
+      </button>
+      <button
+        class="control-button"
+        id="autoPlayBtnBottom"
+        onclick="toggleAutoPlay()"
+        title="Toggle Autoplay"
+        style="flex:1;"
+      >
+        <i class="fas fa-play-circle"></i>
+      </button>
+    </div>
+
+    <div id="loadPlaylistWrapper">
+      <label
+        class="control-button"
+        for="fileInput"
+        style="cursor:pointer; width: 100%; margin-top: 1rem;"
+        title="Load Playlist"
+        >Load Playlist</label
+      >
     </div>
   </div>
 
-  <script>
-    let songs = [], currentIndex = -1, scrollInterval = null, scrollTimeout = null;
+  <input type="file" id="fileInput" accept=".csv" onchange="loadCSV(event)" />
 
+  <script>
+    let songs = [],
+      currentIndex = -1,
+      scrollInterval = null,
+      scrollTimeout = null,
+      averageTimePerLine = 2,
+      autoPlay = false,
+      currentLineHeight = 1.6;
+
+    // Parse CSV and load playlist
     function loadCSV(event) {
       const file = event.target.files[0];
       if (!file) return;
-      document.getElementById('fileInputLabel').textContent = file.name.replace(/\.[^/.]+$/, '');
+      document.getElementById('playlistTitleBtn').textContent = file.name.replace(/\.[^/.]+$/, '');
       Papa.parse(file, {
         header: true,
         skipEmptyLines: true,
-        complete: function(results) {
+        complete: function (results) {
           songs = results.data;
-          renderSongButtons();
           setSongDurations(songs);
+          renderPlaylistDropdown();
           loadSong(0);
-        }
+        },
       });
     }
 
+    // Calculate average duration per line if missing, fill in durations
     function setSongDurations(songs) {
       let totalTime = 0;
       let totalLines = 0;
 
-      songs.forEach(song => {
+      songs.forEach((song) => {
         const duration = parseFloat(song.Duration);
         const lineCount = (song.Lyrics || '').split(/\r?\n/).length;
         if (duration && lineCount) {
@@ -239,49 +278,86 @@
         averageTimePerLine = totalTime / totalLines;
       }
 
-      songs.forEach(song => {
-       if (!song.Duration || isNaN(song.Duration)) {
+      songs.forEach((song) => {
+        if (!song.Duration || isNaN(song.Duration)) {
           const lineCount = (song.Lyrics || '').split(/\r?\n/).length;
           song.Duration = Math.round(lineCount * averageTimePerLine);
         }
       });
     }
 
-    function renderSongButtons() {
-      const sb = document.getElementById('songButtons');
-      sb.innerHTML = '';
-      songs.forEach((s, i) => {
+    // Render the playlist dropdown buttons
+    function renderPlaylistDropdown() {
+      const dropdown = document.getElementById('playlistDropdown');
+      dropdown.innerHTML = '';
+      songs.forEach((song, i) => {
         const btn = document.createElement('button');
-        btn.textContent = s.Title;
-        btn.className = 'song-title-button';
-        if (i === currentIndex) btn.classList.add('active-song');
-        btn.onclick = () => loadSong(i);
-        sb.appendChild(btn);
+        btn.textContent = song.Title;
+        if (i === currentIndex) btn.classList.add('active');
+        btn.onclick = () => {
+          loadSong(i);
+          hideDropdown();
+        };
+        dropdown.appendChild(btn);
       });
     }
 
+    // Show/hide playlist dropdown
+    function togglePlaylistDropdown(event) {
+      event.stopPropagation();
+      const dropdown = document.getElementById('playlistDropdown');
+      if (dropdown.style.display === 'block') {
+        dropdown.style.display = 'none';
+      } else {
+        dropdown.style.display = 'block';
+        dropdown.scrollTop = 0;
+        const activeBtn = dropdown.querySelector('.active');
+        if (activeBtn) activeBtn.scrollIntoView({ block: 'nearest' });
+      }
+    }
+
+    // Hide dropdown if clicking outside
+    function hideDropdown(event) {
+      if (!event || !event.target) return;
+      const dropdown = document.getElementById('playlistDropdown');
+      const btn = document.getElementById('playlistTitleBtn');
+      if (
+        dropdown.style.display === 'block' &&
+        event.target !== btn &&
+        !dropdown.contains(event.target)
+      ) {
+        dropdown.style.display = 'none';
+      }
+    }
+
+    // Load song at index, reset autoscroll & update UI
     function loadSong(index) {
       if (index < 0 || index >= songs.length) return;
       currentIndex = index;
       stopScroll(true);
       const song = songs[index];
-      document.getElementById('title').textContent = song.Title;
-      document.getElementById('capo').textContent = 'Capo: ' + (song.Capo || '');
-      document.getElementById('key').textContent = 'Key: ' + (song.Key || '');
-      document.getElementById('tempo').textContent = 'Tempo: ' + (song.Tempo || '');
-      document.getElementById('duration').textContent = 'Duration: ' + (song.Duration || '?');
-      document.getElementById('currentSongTitle').textContent = song.Title;
-      document.getElementById('prevBtn').textContent = songs[index - 1]?.Title || 'Prev';
-      document.getElementById('nextBtn').textContent = songs[index + 1]?.Title || 'Next';
+      document.getElementById('playlistTitleBtn').textContent =
+        document.getElementById('playlistTitleBtn').textContent || 'Playlist';
+      document.getElementById('nextTitle').textContent = songs[index + 1]?.Title || 'None';
+      updateClock();
+      updateSongInfo(song);
       const html = formatLyrics(song.Lyrics || '');
-      document.getElementById('lyricsPanel').innerHTML = html;
-      renderSongButtons();
-      document.getElementById('lyricsPanel').scrollTop = 0;
+      const panel = document.getElementById('lyricsPanel');
+      panel.innerHTML = html;
+      panel.scrollTop = 0;
+      renderPlaylistDropdown();
+
+      // If autoplay active, start scrolling this song automatically
+      if (autoPlay) {
+        startAutoScroll();
+      }
     }
 
+    // Format lyrics with chords and sections
     function formatLyrics(text) {
       let lines = text.split(/\r?\n/);
-      let html = '', sectionOpen = false;
+      let html = '',
+        sectionOpen = false;
       lines.forEach((line) => {
         const sectionMatch = line.match(/\{c:\s*(.*?)\s*\}/i);
         if (sectionMatch) {
@@ -297,99 +373,157 @@
       return html;
     }
 
-function stopScroll() {
-  clearInterval(scrollInterval);
-  clearTimeout(scrollTimeout);
-  scrollInterval = null;
-  scrollTimeout = null;
-  const scrollBtn = document.getElementById('scrollBtn');
-  if (scrollBtn) scrollBtn.innerHTML = '<i class="fas fa-play"></i>';
-}
+    // Update song metadata display including formatted duration MM:SS
+    function updateSongInfo(song) {
+      const si = document.getElementById('songInfoBox');
+      const dur = parseInt(song.Duration, 10);
+      let durStr = '?';
+      if (!isNaN(dur)) {
+        const m = Math.floor(dur / 60);
+        const s = dur % 60;
+        durStr = `${m}:${s.toString().padStart(2, '0')}`;
+      }
+      si.textContent = `Title: ${song.Title || 'N/A'}\nCapo: ${song.Capo || 'N/A'}\nKey: ${song.Key || 'N/A'}\nTempo: ${song.Tempo || 'N/A'}\nDuration: ${durStr}`;
+    }
 
-function toggleScroll(loadSong = false) {
-  const panel = document.getElementById('lyricsPanel');
-  const scrollBtn = document.getElementById('scrollBtn');
+    // Scroll lyrics panel line by line timed by duration/lines
+    function startAutoScroll() {
+      stopScroll();
+      const panel = document.getElementById('lyricsPanel');
+      const song = songs[currentIndex];
+      if (!song) return;
 
-  if (scrollInterval || loadSong) {
-    stopScroll();
-    return;
-  }
+      const lines = panel.querySelectorAll('div > div, div:not(.section)');
+      // fallback if lines not found correctly, fallback to children divs (rough)
+      const totalLines = lines.length || panel.children.length;
+      if (totalLines === 0) return;
 
-  scrollBtn.innerHTML = '<i class="fas fa-pause"></i>';
-  const totalScroll = panel.scrollHeight - panel.clientHeight;
-  const scrollDuration = Math.max(5, songs[currentIndex].Duration - 20);
-  const pixelsPerFrame = totalScroll / (scrollDuration * 60);
-  let scrollTop = panel.scrollTop;
+      const durationSeconds = parseInt(song.Duration, 10) || totalLines * averageTimePerLine;
+      const intervalTime = (durationSeconds * 1000) / totalLines;
 
-  console.log(pixelsPerFrame, panel.scrollTop >= totalScroll);
+      let currentLine = 0;
+      scrollInterval = setInterval(() => {
+        if (currentLine >= totalLines) {
+          stopScroll();
+          // When autoscroll finishes, if autoplay is on, load next song
+          if (autoPlay && currentIndex + 1 < songs.length) {
+            loadSong(currentIndex + 1);
+          }
+          return;
+        }
+        // Scroll so current line is top of panel visible area
+        let targetDiv = lines[currentLine];
+        if (!targetDiv) targetDiv = panel.children[currentLine];
+        if (targetDiv) {
+          panel.scrollTop = targetDiv.offsetTop;
+        }
+        currentLine++;
+      }, intervalTime);
+    }
 
-  scrollTimeout = setTimeout(() => {
-    scrollInterval = setInterval(() => {
-      scrollTop += pixelsPerFrame;
-      panel.scrollTop = scrollTop;
-      if (panel.scrollTop >= totalScroll) {
+    // Stop autoscroll & clear timers
+    function stopScroll(clearButtons = false) {
+      if (scrollInterval) clearInterval(scrollInterval);
+      if (scrollTimeout) clearTimeout(scrollTimeout);
+      scrollInterval = null;
+      scrollTimeout = null;
+      if (clearButtons) {
+        updateAutoPlayButtons(false);
+      }
+    }
+
+    // Toggle autoplay state & update both buttons
+    function toggleAutoPlay() {
+      autoPlay = !autoPlay;
+      updateAutoPlayButtons(autoPlay);
+
+      if (autoPlay) {
+        startAutoScroll();
+      } else {
         stopScroll();
       }
-    }, 1000 / 60);
-  }, 10000);
-}
+    }
 
+    // Update both autoplay buttons icons to keep sync
+    function updateAutoPlayButtons(isPlaying) {
+      const icon = isPlaying ? 'fa-pause-circle' : 'fa-play-circle';
+      const btnTop = document.getElementById('autoPlayBtnTop');
+      const btnBottom = document.getElementById('autoPlayBtnBottom');
+      if (btnTop) btnTop.innerHTML = `<i class="fas ${icon}"></i>`;
+      if (btnBottom) btnBottom.innerHTML = `<i class="fas ${icon}"></i>`;
+    }
+
+    // Scroll to next or previous section
     function scrollToSection(dir) {
       const sections = document.querySelectorAll('.section');
       if (!sections.length) return;
       const panel = document.getElementById('lyricsPanel');
       const scrollTop = panel.scrollTop;
       let target = null;
-      sections.forEach((s) => {
-        if (dir > 0 && s.offsetTop > scrollTop + 10 && !target) target = s;
-        if (dir < 0 && s.offsetTop < scrollTop - 10) target = s;
-      });
+      if (dir > 0) {
+        for (const s of sections) {
+          if (s.offsetTop > scrollTop + 10) {
+            target = s;
+            break;
+          }
+        }
+      } else {
+        for (let i = sections.length - 1; i >= 0; i--) {
+          if (sections[i].offsetTop < scrollTop - 10) {
+            target = sections[i];
+            break;
+          }
+        }
+      }
       if (target) panel.scrollTop = target.offsetTop;
     }
 
+    // Adjust font size in lyrics panel
     function adjustFont(delta) {
       const panel = document.getElementById('lyricsPanel');
       const size = parseFloat(getComputedStyle(panel).fontSize);
-      panel.style.fontSize = (size + delta * 2) + 'px';
+      const newSize = Math.min(Math.max(size + delta * 2, 10), 40);
+      panel.style.fontSize = newSize + 'px';
+      panel.scrollTop = 0;
     }
 
-    let currentLineHeight = 1.6;
-
+    // Adjust line height in lyrics panel
     function adjustLineHeight(delta) {
-       currentLineHeight = Math.max(1, Math.min(currentLineHeight + delta * 0.2, 3));
-       document.getElementById('lyricsPanel').style.lineHeight = `${currentLineHeight}em`;
+      currentLineHeight = Math.min(Math.max(currentLineHeight + delta * 0.2, 1), 3);
+      document.getElementById('lyricsPanel').style.lineHeight = currentLineHeight + 'em';
+      document.getElementById('lyricsPanel').scrollTop = 0;
     }
 
-    function toggleFullScreen() {
-      if (!document.fullscreenElement) document.documentElement.requestFullscreen();
-      else if (document.exitFullscreen) document.exitFullscreen();
-    }
-
+    // Toggle light/dark mode
     function toggleMode() {
       document.body.classList.toggle('light-mode');
     }
 
-  function updateClock() {
-  const now = new Date();
-  let hours = now.getHours();
-  const minutes = now.getMinutes().toString().padStart(2, '0');
-  const ampm = hours >= 12 ? 'PM' : 'AM';
-  hours = hours % 12;
-  hours = hours ? hours : 12;
-  document.getElementById('clock').textContent = `${hours}:${minutes} ${ampm}`;
-}
-setInterval(updateClock, 1000);
-updateClock();
-
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker
-          .register('service-worker.js')
-          .then(reg => console.log('Service Worker registered:', reg.scope))
-          .catch(err => console.error('SW registration failed:', err));
-      });
+    // Update clock display
+    function updateClock() {
+      const now = new Date();
+      let hours = now.getHours();
+      const minutes = now.getMinutes().toString().padStart(2, '0');
+      const ampm = hours >= 12 ? 'PM' : 'AM';
+      hours = hours % 12;
+      hours = hours ? hours : 12;
+      document.getElementById('clock').textContent = `${hours}:${minutes} ${ampm}`;
     }
-  </script>
+    setInterval(updateClock, 1000);
+    updateClock();
 
+    // Hide dropdown if clicked outside
+    document.body.addEventListener('click', (event) => {
+      const dropdown = document.getElementById('playlistDropdown');
+      const btn = document.getElementById('playlistTitleBtn');
+      if (
+        dropdown.style.display === 'block' &&
+        event.target !== btn &&
+        !dropdown.contains(event.target)
+      ) {
+        dropdown.style.display = 'none';
+      }
+    });
+  </script>
 </body>
 </html>
