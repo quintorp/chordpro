@@ -45,6 +45,7 @@
       cursor: pointer;
       width: 100%;
       text-align: center;
+      display: inline-block;
       user-select: none;
     }
     .control-button:hover {
@@ -81,9 +82,6 @@
       display: flex;
       flex-direction: column;
       position: relative;
-    }
-    #topBar {
-      display: none;
     }
     #lyricsPanel {
       padding: 1rem;
@@ -148,11 +146,6 @@
     #playlistDropdown button.active {
       background-color: #666;
     }
-    /* Move Load Playlist full width bottom */
-    #loadPlaylistWrapper {
-      margin-top: auto;
-      width: 100%;
-    }
   </style>
 </head>
 <body onclick="hideDropdown(event)">
@@ -169,7 +162,7 @@
     <div id="clock"></div>
     <div id="songInfoBox"></div>
 
-    <div class="control-pair" style="margin-bottom:1rem;">
+    <div class="control-pair">
       <button class="control-button" onclick="scrollToSection(1)" title="Next Section">
         <i class="fas fa-chevron-down"></i>
       </button>
@@ -183,14 +176,12 @@
       </button>
     </div>
 
-    <hr style="width:100%; border:0.5px solid #444;" />
-
     <div class="control-pair">
       <button class="control-button" onclick="adjustFont(1)" title="Increase Font Size">A+</button>
       <button class="control-button" onclick="adjustFont(-1)" title="Decrease Font Size">A-</button>
     </div>
 
-    <div class="control-pair" style="margin-bottom:1rem;">
+    <div class="control-pair">
       <button class="control-button" onclick="adjustLineHeight(1)" title="Increase Line Height">
         <i class="fas fa-plus"></i>
       </button>
@@ -198,8 +189,6 @@
         <i class="fas fa-minus"></i>
       </button>
     </div>
-
-    <hr style="width:100%; border:0.5px solid #444;" />
 
     <div class="control-pair" style="gap: 0.5rem; align-items:center; width: 100%;">
       <button
@@ -220,16 +209,13 @@
         <i class="fas fa-play-circle"></i>
       </button>
     </div>
-
-    <div id="loadPlaylistWrapper">
+<hr width=100%>
+      <button class="control-button">
       <label
-        class="control-button"
         for="fileInput"
-        style="cursor:pointer; width: 100%; margin-top: 1rem;"
         title="Load Playlist"
         >Load Playlist</label
-      >
-    </div>
+      ></button>
   </div>
 
   <input type="file" id="fileInput" accept=".csv" onchange="loadCSV(event)" />
