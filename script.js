@@ -454,3 +454,31 @@ function toggleAutoPlay() {
         }, 30000); // 30 seconds per song
     }
 }
+// Keyboard bindings for foot controller
+document.addEventListener('keydown', (e) => {
+  switch (e.key) {
+    case '3':
+      // Scroll to top
+      document.getElementById('contentWrapper').scrollTop = 0;
+      break;
+    case '-':
+      // Toggle autoplay
+      toggleAutoPlay();
+      break;
+    case '*':
+      // Toggle autoscroll
+      toggleScroll();
+      break;
+    case '/':
+      // Next lyrics section
+      scrollToSection(1);
+      break;
+    case '=':
+      // Next song
+      loadSong(currentIndex + 1);
+      break;
+    default:
+      // Log unhandled keys for debugging
+      console.log('Unhandled key:', e.key);
+  }
+});
