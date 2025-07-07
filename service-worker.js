@@ -2,6 +2,8 @@ const CACHE_NAME = "chordpro-cache-v1";
 const FILES_TO_CACHE = [
   "/",
   "/index.html",
+  "/script.js",
+  "/styles.css",
   "/manifest.json",
   "/icon.png",
   "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css",
