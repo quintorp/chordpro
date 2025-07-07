@@ -1,0 +1,303 @@
+/* ChordPro Viewer Styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #1a1a1a;
+  color: #ffffff;
+  overflow: hidden;
+  height: 100vh;
+  display: flex;
+}
+
+#contentWrapper {
+  flex: 1;
+  overflow-y: auto;
+  background-color: #2a2a2a;
+  border-radius: 8px;
+  margin: 10px;
+}
+
+#lyricsPanel {
+  font-size: 18px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-weight: bold;
+  min-height: 200px;
+}
+
+.lyrics-section {
+  padding: 15px;
+  margin-bottom: 5px;
+  border-radius: 6px;
+}
+
+.section-light {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.section-dark {
+  background-color: rgba(0, 0, 0, 0.2);
+}
+
+.section-header {
+  font-weight: bold;
+  font-style: italic;
+  text-align: right;
+  margin-bottom: 8px;
+  color: #ccc;
+  font-size: 0.9em;
+  text-transform: uppercase;
+  float: right;
+  clear: both;
+}
+
+.chord {
+  color: white;
+  font-weight: bold;
+  font-size: 0.9em;
+  background-color: #8B0000;
+  padding: 3px 6px;
+  border-radius: 4px;
+  margin: 0;
+  display: inline-block;
+}
+
+#rightBar {
+  width: 250px;
+  background-color: #333;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border-radius: 8px;
+  margin: 10px 10px 10px 0;
+}
+
+.control-button {
+  background-color: #444;
+  color: white;
+  border: none;
+  padding: 15px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: bold;
+  transition: background-color 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.control-button:hover {
+  background-color: #555;
+}
+
+.control-button:active {
+  background-color: #666;
+}
+
+.control-button i {
+  font-size: 20px;
+  font-weight: bold;
+}
+
+.control-pair {
+  display: flex;
+  gap: 5px;
+}
+
+.control-pair .control-button {
+  flex: 1;
+}
+
+.bottom-controls {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+#playlistDropdown {
+  background-color: #444;
+  border-radius: 6px;
+  max-height: calc(100vh - 200px);
+  overflow-y: auto;
+  display: none;
+  position: absolute;
+  width: 210px;
+  z-index: 1000;
+}
+
+#playlistDropdown.show {
+  display: block;
+}
+
+.playlist-item {
+  padding: 10px;
+  cursor: pointer;
+  border-bottom: 1px solid #555;
+  transition: background-color 0.2s ease;
+}
+
+.playlist-item:hover {
+  background-color: #555;
+}
+
+.playlist-item.active {
+  background-color: #666;
+  font-weight: bold;
+}
+
+#clock {
+  background-color: #444;
+  padding: 20px;
+  border-radius: 6px;
+  text-align: center;
+  font-size: 32px;
+  font-weight: bold;
+  color: #00ff00;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  letter-spacing: 2px;
+}
+
+#songInfoBox {
+  background-color: #444;
+  padding: 15px;
+  border-radius: 6px;
+  font-size: 16px;
+  line-height: 1.4;
+}
+
+.song-title {
+  font-size: 22px;
+  font-weight: bold;
+  color: #fff;
+  margin-bottom: 8px;
+}
+
+.song-counter {
+  font-size: 16px;
+  color: #aaa;
+  margin-bottom: 10px;
+  font-weight: 500;
+}
+
+.song-metadata {
+  font-size: 16px;
+  color: #ccc;
+  font-weight: bold;
+}
+
+#fileInput {
+  display: none;
+}
+
+/* Light mode styles */
+body.light-mode {
+  background-color: #f5f5f5;
+  color: #333;
+}
+
+body.light-mode #contentWrapper {
+  background-color: #ffffff;
+  color: #333;
+}
+
+body.light-mode #lyricsPanel {
+  color: #333;
+}
+
+body.light-mode .section-light {
+  background-color: rgba(0, 0, 0, 0.03);
+}
+
+body.light-mode .section-dark {
+  background-color: rgba(0, 0, 0, 0.08);
+}
+
+body.light-mode .section-header {
+  color: #666;
+}
+
+body.light-mode .chord {
+  color: white;
+  background-color: #B22222;
+}
+
+body.light-mode #rightBar {
+  background-color: #e0e0e0;
+}
+
+body.light-mode .control-button {
+  background-color: #d0d0d0;
+  color: #333;
+}
+
+body.light-mode .control-button:hover {
+  background-color: #c0c0c0;
+}
+
+body.light-mode #playlistDropdown {
+  background-color: #d0d0d0;
+}
+
+body.light-mode .playlist-item {
+  border-bottom-color: #bbb;
+}
+
+body.light-mode .playlist-item:hover {
+  background-color: #c0c0c0;
+}
+
+body.light-mode #clock {
+  background-color: #d0d0d0;
+  color: #006600;
+}
+
+body.light-mode #songInfoBox {
+  background-color: #d0d0d0;
+  color: #333;
+}
+
+body.light-mode .song-title {
+  color: #333;
+}
+
+body.light-mode .song-counter {
+  color: #666;
+}
+
+body.light-mode .song-metadata {
+  color: #555;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  body {
+    flex-direction: column;
+  }
+  
+  #rightBar {
+    width: 100%;
+    flex-direction: row;
+    flex-wrap: wrap;
+    margin: 0 10px 10px 10px;
+  }
+  
+  .control-button {
+    flex: 1;
+    min-width: 120px;
+  }
+  
+  #clock {
+    font-size: 24px;
+  }
+}
+</parameter>
