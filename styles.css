@@ -29,6 +29,7 @@ body {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   font-weight: bold;
   min-height: 200px;
+  padding: 20px;
 }
 
 .lyrics-section {
@@ -58,11 +59,11 @@ body {
 }
 
 .chord {
-  color: white;
+  color: #00DD00;
   font-weight: bold;
   font-size: 0.9em;
-  background-color: #8B0000;
-  padding: 3px 6px;
+  background-color: #000000;
+  padding: 3px 8px;
   border-radius: 4px;
   margin: 0;
   display: inline-block;
@@ -72,11 +73,14 @@ body {
   width: 250px;
   background-color: #333;
   padding: 20px;
+  padding-top: 0;
   display: flex;
   flex-direction: column;
   gap: 10px;
   border-radius: 8px;
   margin: 10px 10px 10px 0;
+  position: relative;
+  z-index: 100;
 }
 
 .control-button {
@@ -86,7 +90,7 @@ body {
   padding: 15px 16px;
   border-radius: 6px;
   cursor: pointer;
-  font-size: 16px;
+  font-size: 18px;
   font-weight: bold;
   transition: background-color 0.3s ease;
   display: flex;
@@ -106,6 +110,26 @@ body {
 .control-button i {
   font-size: 20px;
   font-weight: bold;
+}
+
+/* Special styling for playlist title button */
+#playlistTitleBtn {
+  background-color: #00DD00;
+  color: #2a2a2a;
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+  margin-top: -10px;
+}
+
+#playlistTitleBtn:hover {
+  background-color: #3a3a3a;
+}
+
+/* Green styling for specific elements */
+#nextSectionBtn,
+#scrollBtn,
+#nextBtn {
+  color: #00DD00;
 }
 
 .control-pair {
@@ -133,6 +157,8 @@ body {
   position: absolute;
   width: 210px;
   z-index: 1000;
+  top: 100%;
+  left: 0;
 }
 
 #playlistDropdown.show {
@@ -157,14 +183,12 @@ body {
 
 #clock {
   background-color: #444;
-  padding: 20px;
+  padding: 10px;
   border-radius: 6px;
   text-align: center;
-  font-size: 32px;
+  font-size: 28px;
   font-weight: bold;
-  color: #00ff00;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  letter-spacing: 2px;
+  color: #00DD00;
 }
 
 #songInfoBox {
@@ -178,7 +202,7 @@ body {
 .song-title {
   font-size: 22px;
   font-weight: bold;
-  color: #fff;
+  color: #00DD00;
   margin-bottom: 8px;
 }
 
@@ -197,6 +221,56 @@ body {
 
 #fileInput {
   display: none;
+}
+
+/* Mobile tab for opening the right bar */
+#mobileTab {
+  position: fixed;
+  top: 50%;
+  right: 0;
+  transform: translateY(-50%);
+  background-color: #333;
+  color: #00DD00;
+  border: none;
+  padding: 20px 8px;
+  border-radius: 8px 0 0 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: bold;
+  z-index: 999;
+  transition: background-color 0.3s ease;
+  writing-mode: vertical-lr;
+  text-orientation: mixed;
+  display: none;
+}
+
+#mobileTab:hover {
+  background-color: #444;
+}
+
+/* Show mobile tab by default on mobile */
+#mobileTab.mobile-show {
+  display: block;
+}
+
+#mobileTab.mobile-hide {
+  display: none;
+}
+
+/* Overlay for closing the sidebar */
+#mobileOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+  display: none;
+}
+
+#mobileOverlay.mobile-show {
+  display: block;
 }
 
 /* Light mode styles */
@@ -227,8 +301,8 @@ body.light-mode .section-header {
 }
 
 body.light-mode .chord {
-  color: white;
-  background-color: #B22222;
+  color: #00DD00;
+  background-color: #666;
 }
 
 body.light-mode #rightBar {
@@ -242,6 +316,21 @@ body.light-mode .control-button {
 
 body.light-mode .control-button:hover {
   background-color: #c0c0c0;
+}
+
+body.light-mode #playlistTitleBtn {
+  background-color: #f0f0f0;
+  color: #00DD00;
+}
+
+body.light-mode #playlistTitleBtn:hover {
+  background-color: #e8e8e8;
+}
+
+body.light-mode #nextSectionBtn,
+body.light-mode #scrollBtn,
+body.light-mode #nextBtn {
+  color: #008800;
 }
 
 body.light-mode #playlistDropdown {
@@ -258,7 +347,7 @@ body.light-mode .playlist-item:hover {
 
 body.light-mode #clock {
   background-color: #d0d0d0;
-  color: #006600;
+  color: #008800;
 }
 
 body.light-mode #songInfoBox {
@@ -267,7 +356,7 @@ body.light-mode #songInfoBox {
 }
 
 body.light-mode .song-title {
-  color: #333;
+  color: #008800;
 }
 
 body.light-mode .song-counter {
@@ -278,26 +367,84 @@ body.light-mode .song-metadata {
   color: #555;
 }
 
-/* Responsive design */
+body.light-mode #mobileTab {
+  background-color: #e0e0e0;
+  color: #008800;
+}
+
+body.light-mode #mobileTab:hover {
+  background-color: #d0d0d0;
+}
+
+/* Mobile responsive design */
 @media (max-width: 768px) {
   body {
     flex-direction: column;
   }
   
+  #contentWrapper {
+    margin: 10px 10px 0 10px;
+    flex: 1;
+  }
+  
   #rightBar {
-    width: 100%;
-    flex-direction: row;
-    flex-wrap: wrap;
-    margin: 0 10px 10px 10px;
+    position: fixed;
+    top: 0;
+    right: -100%;
+    width: 90%;
+    max-width: 300px;
+    height: 100vh;
+    z-index: 1000;
+    margin: 0;
+    border-radius: 0;
+    transition: right 0.3s ease;
+    overflow-y: auto;
+  }
+  
+  #rightBar.mobile-open {
+    right: 0;
+    box-shadow: -5px 0 15px rgba(0, 0, 0, 0.5);
   }
   
   .control-button {
-    flex: 1;
-    min-width: 120px;
+    font-size: 16px;
+    padding: 12px 14px;
+  }
+  
+  #clock {
+    font-size: 24px;
+    padding: 12px;
+  }
+  
+  #songInfoBox {
+    padding: 12px;
+  }
+  
+  .song-title {
+    font-size: 18px;
+  }
+  
+  #playlistDropdown {
+    width: 240px;
+  }
+}
+
+/* Tablet responsive design */
+@media (min-width: 769px) and (max-width: 1024px) {
+  #rightBar {
+    width: 220px;
+  }
+  
+  .control-button {
+    font-size: 16px;
+    padding: 12px 14px;
   }
   
   #clock {
     font-size: 24px;
   }
+  
+  #playlistDropdown {
+    width: 180px;
+  }
 }
-</parameter>
