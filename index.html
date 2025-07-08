@@ -9,7 +9,6 @@
   <meta name="apple-mobile-web-app-title" content="ChordPro Viewer" />
   <link rel="apple-touch-icon" href="icon.png" />
   <link rel="manifest" href="manifest.json" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" crossorigin="anonymous">
   <link rel="stylesheet" href="./styles.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 </head>
@@ -17,35 +16,41 @@
   <div id="contentWrapper">
     <div id="lyricsPanel">Load a song file (CSV) to begin.</div>
   </div>
+  
+  <!-- Mobile tab for opening right bar -->
+  <button id="mobileTab" onclick="toggleMobileRightBar()">CONTROLS</button>
+  
+  <!-- Mobile overlay for closing right bar -->
+  <div id="mobileOverlay" onclick="closeMobileRightBar()"></div>
 
   <div id="rightBar">
     <button class="control-button" id="playlistTitleBtn" onclick="togglePlaylistDropdown(event)">Playlist Title</button>
     <div id="playlistDropdown"></div>
-    <button class="control-button" id="nextBtn" onclick="loadSong(currentIndex + 1)"><span id="nextTitle">Song Title</span> <i class="fas fa-forward"></i></button>
     <div id="clock"></div>
     <div id="songInfoBox"></div>
     <div class="control-pair">
-      <button class="control-button" onclick="scrollToSection(1)" title="Next Section"><i class="fas fa-chevron-down"></i></button>
-      <button class="control-button" onclick="toggleScroll()" id="scrollBtn"><i class="fas fa-play"></i></button>
+      <button class="control-button" onclick="scrollToSection(1)" title="Next Section" id="nextSectionBtn"></button>
+      <button class="control-button" onclick="toggleScroll()" id="scrollBtn"></button>
     </div>
+    <button class="control-button" id="nextBtn" onclick="loadSong(currentIndex + 1)"><span id="nextTitle">Song Title</span> <span id="nextIcon"></span></button>
     <div class="bottom-controls">
       <div class="control-pair">
-        <button class="control-button" onclick="adjustFont(1)">A+</button>
         <button class="control-button" onclick="adjustFont(-1)">A-</button>
+        <button class="control-button" onclick="adjustFont(1)">A+</button>
       </div>
       <div class="control-pair">
-        <button class="control-button" onclick="adjustLineHeight(1)" title="Increase Line Spacing"><i class="fas fa-plus"></i></button>
-        <button class="control-button" onclick="adjustLineHeight(-1)" title="Decrease Line Spacing"><i class="fas fa-minus"></i></button>
+        <button class="control-button" onclick="adjustLineHeight(-1)" title="Decrease Line Spacing" id="lineHeightDownBtn">-</button>
+        <button class="control-button" onclick="adjustLineHeight(1)" title="Increase Line Spacing" id="lineHeightUpBtn">+</button>
       </div>
       <div class="control-pair">
-        <button class="control-button" onclick="toggleMode()"><i class="fas fa-adjust"></i></button>
-        <button class="control-button" onclick="toggleAutoPlay()" id="autoPlayBtn"><i class="fas fa-play-circle"></i></button>
+        <button class="control-button" onclick="toggleMode()" id="modeBtn"></button>
+        <button class="control-button" onclick="toggleAutoPlay()" id="autoPlayBtn"></button>
       </div>
-      <label class="control-button" for="fileInput">Load Playlist</label>
+      <label class="control-button" for="fileInput" id="fileImportBtn"></label>
     </div>
   </div>
 
   <input type="file" id="fileInput" accept=".csv">
-  <script src="./script.js"></script>
+  <script type="module" src="./main.js"></script>
 </body>
 </html>
