@@ -119,12 +119,13 @@ body {
 
 .section-header {
   font-weight: bold;
+  font-family: sans-serif;
   text-align: center;
   margin: 0 0 1px 0;
   color: #888;
   font-size: 0.85em;
   text-transform: uppercase;
-  letter-spacing: 2px;
+  letter-spacing: 3px;
 }
 
 .chord {
@@ -148,11 +149,21 @@ body {
 
 .control-button.armed {
   border-color: #00DD00;
-  animation: pulse 2s infinite;
 }
 
-/* Tempo-based pulsing for autoscroll button */
-.control-button.armed.tempo-pulse {
+/* Active state - solid border when feature is ON */
+.control-button.active {
+  border-color: #00DD00;
+}
+
+/* Armed state - pulsing border during timing periods */
+.control-button.armed {
+  border-color: #00DD00;
+}
+
+/* Tempo-based pulsing animation only when armed */
+.control-button.tempo-pulse {
+  animation: pulse 2s infinite;
   animation-duration: var(--tempo-duration, 2s);
 }
 
@@ -188,16 +199,17 @@ body {
 }
 
 .control-button:hover {
-  background-color: #555;
-  color: #333;
+  //background-color: #555;
+  border-color: #00DD00;
+  //color: #333;
 }
 
 .control-button:active {
-  background-color: #666;
+  //background-color: #666;
 }
 
 .control-button.armed {
-  border-color: #00DD00;
+  //border-color: #00DD00;
 }
 
 .control-button i {
@@ -215,8 +227,8 @@ body {
 }
 
 #playlistTitleBtn:hover {
-  background-color: #00DD00;
-  color: #2a2a2a;
+  //background-color: #00DD00;
+  //color: #2a2a2a;
 }
 
 /* Primary button styling */
@@ -227,7 +239,7 @@ body {
 }
 
 .primary-button:hover {
-  background-color: #00BB00;
+  //background-color: #00BB00;
 }
 
 #initImportBtn {
@@ -243,8 +255,8 @@ body {
 }
 
 .green-icon:hover {
-  color: #2a2a2a;
-  background-color: #00BB00;
+  //color: #2a2a2a;
+  //background-color: #00BB00;
 }
 
 /* All primary buttons full width */
@@ -289,26 +301,26 @@ body {
 }
 
 .drag-control:hover {
-  background-color: #555;
-  border-color: #00DD00;
+  //background-color: #555;
+  //border-color: #00DD00;
 }
 
 .drag-control.dragging {
-  background-color: #00DD00;
-  color: #2a2a2a;
-  border-color: #00BB00;
+  //background-color: #00DD00;
+  //color: #2a2a2a;
+  //border-color: #00BB00;
 }
 
 .drag-control-label {
-  font-size: 11px;
-  opacity: 0.8;
-  line-height: 1;
+  //font-size: 11px;
+  //opacity: 0.8;
+  //line-height: 1;
 }
 
 .drag-control-value {
-  font-size: 14px;
-  font-weight: bold;
-  line-height: 1;
+  //font-size: 14px;
+  //font-weight: bold;
+  //line-height: 1;
 }
 
 /* Light mode drag controls */
@@ -363,14 +375,19 @@ body.light-mode .drag-control.dragging {
   gap: 8px;
 }
 
+#nextSectionBtn, #scrollBtn, #nextSongBtn {
+  display: none;
+}
+
 /* FIXED: Playlist dropdown styling */
 #playlistDropdown {
   background-color: #444;
   border-radius: 6px;
-  max-height: calc(100vh - 70px);
+  //max-height: calc(100vh - 70px);
+  height: 100%;
   overflow-y: auto;
   display: none;
-  width: 100%;
+  //width: 100%;
   z-index: 99999;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   position: absolute;
@@ -706,8 +723,8 @@ body.light-mode #mobileTab:hover {
   }
   
   #playlistDropdown {
-    width: calc(80% - 30px);
-    max-width: 250px;
+    //width: 100%;
+    //max-width: 250px;
     z-index: 99999;
   }
   
