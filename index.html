@@ -30,7 +30,7 @@
   <div id="mobileOverlay" onclick="closeMobileRightBar()"></div>
 
   <div id="rightBar">
-    <button class="control-button" id="playlistTitleBtn" onclick="togglePlaylistDropdown(event)">Playlist Title</button>
+    <button class="control-button primary-button" id="playlistTitleBtn" onclick="togglePlaylistDropdown(event)">Playlist Title</button>
     <div id="playlistDropdown"></div>
     <div id="clock"></div>
     <button class="control-button primary-button" onclick="scrollToSection(1)" title="Next Section" id="nextSectionBtn"></button>
@@ -40,12 +40,12 @@
     <div id="songInfoBox"></div>
     <div class="bottom-controls">
       <div class="control-pair">
-        <button class="control-button secondary-button" onclick="adjustFont(-1)">A-</button>
-        <button class="control-button secondary-button" onclick="adjustFont(1)">A+</button>
-      </div>
-      <div class="control-pair">
-        <button class="control-button secondary-button" onclick="adjustLineHeight(-1)" title="Decrease Line Spacing" id="lineHeightDownBtn">A-</button>
-        <button class="control-button secondary-button" onclick="adjustLineHeight(1)" title="Increase Line Spacing" id="lineHeightUpBtn">+</button>
+        <div class="control-button secondary-button drag-control" id="fontSizeControl" data-type="fontSize">
+          <div class="drag-control-icon" id="fontSizeIcon"></div>
+        </div>
+        <div class="control-button secondary-button drag-control" id="lineHeightControl" data-type="lineHeight">
+          <div class="drag-control-icon" id="lineHeightIcon"></div>
+        </div>
       </div>
       <div class="control-pair">
         <button class="control-button secondary-button" onclick="toggleMode()" id="modeBtn"></button>
