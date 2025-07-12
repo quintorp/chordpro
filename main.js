@@ -20,6 +20,7 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeClock();
     setupFileInput();
     setupSwipeSupport();
+    setupDragControls();
     
     // Trigger CSV load request on page load
     setTimeout(() => {
@@ -42,11 +43,13 @@ function initializeIcons() {
     document.getElementById('nextSongBtn').innerHTML = icons.playerTrackNext;
     document.getElementById('autoPlayBtn').innerHTML = icons.autoPlay;
 
-    document.getElementById('lineHeightDownBtn').innerHTML = icons.lineHeight + '-';
-    document.getElementById('lineHeightUpBtn').innerHTML = icons.lineHeight + '+';
     document.getElementById('modeBtn').innerHTML = icons.brightness;
     document.getElementById('fileImportBtn').innerHTML = icons.fileImport;
     document.getElementById('initImportBtn').innerHTML = 'Load a song file (CSV)' + icons.fileImport;
+    
+    // Initialize drag control icons
+    document.getElementById('fontSizeIcon').innerHTML = icons.textSize;
+    document.getElementById('lineHeightIcon').innerHTML = icons.lineHeight;
 }
 
 // Clock functionality
@@ -710,6 +713,81 @@ window.addEventListener('resize', function() {
 // Make mobile functions globally available
 window.toggleMobileRightBar = toggleMobileRightBar;
 window.closeMobileRightBar = closeMobileRightBar;
+
+// Setup drag controls for font size and line height
+function setupDragControls() {
+    const fontSizeControl = document.getElementById('fontSizeControl');
+    const lineHeightControl = document.getElementById('lineHeightControl');
+    
+    setupDragControl(fontSizeControl, 'fontSize');
+    setupDragControl(lineHeightControl, 'lineHeight');
+}
+
+function setupDragControl(element, type) {
+    let isDragging = false;
+    let startY = 0;
+    let startValue = 0;
+    
+    // Mouse events
+    element.addEventListener('mousedown', startDrag);
+    document.addEventListener('mousemove', drag);
+    document.addEventListener('mouseup', endDrag);
+    
+    // Touch events
+    element.addEventListener('touchstart', startDrag, { passive: false });
+    document.addEventListener('touchmove', drag, { passive: false });
+    document.addEventListener('touchend', endDrag);
+    
+    function startDrag(e) {
+        e.preventDefault();
+        isDragging = true;
+        element.classList.add('dragging');
+        
+        const clientY = e.type === 'touchstart' ? e.touches[0].clientY : e.clientY;
+        startY = clientY;
+        
+        if (type === 'fontSize') {
+            startValue = currentFontSize;
+        } else if (type === 'lineHeight') {
+            startValue = currentLineHeight;
+        }
+        
+        document.body.style.cursor = 'ns-resize';
+    }
+    
+    function drag(e) {
+        if (!isDragging) return;
+        e.preventDefault();
+        
+        const clientY = e.type === 'touchmove' ? e.touches[0].clientY : e.clientY;
+        const deltaY = startY - clientY; // Inverted: up = positive, down = negative
+        
+        if (type === 'fontSize') {
+            const sensitivity = 0.5; // pixels per pixel of mouse movement
+            const newValue = Math.max(12, Math.min(32, startValue + (deltaY * sensitivity)));
+            currentFontSize = newValue;
+            
+            const lyricsPanel = document.getElementById('lyricsPanel');
+            lyricsPanel.style.fontSize = currentFontSize + 'px';
+            
+        } else if (type === 'lineHeight') {
+            const sensitivity = 0.005; // line height units per pixel of mouse movement
+            const newValue = Math.max(1.0, Math.min(2.5, startValue + (deltaY * sensitivity)));
+            currentLineHeight = newValue;
+            
+            const lyricsPanel = document.getElementById('lyricsPanel');
+            lyricsPanel.style.lineHeight = currentLineHeight;
+        }
+    }
+    
+    function endDrag(e) {
+        if (!isDragging) return;
+        
+        isDragging = false;
+        element.classList.remove('dragging');
+        document.body.style.cursor = '';
+    }
+}
 
 // Setup swipe support for mobile
 function setupSwipeSupport() {
