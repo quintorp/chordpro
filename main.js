@@ -129,7 +129,7 @@ function parsePlaylist(csvData) {
         clearTimeout(scrollDelayTimeout);
         isScrolling = false;
         const scrollBtn = document.getElementById('scrollBtn');
-        scrollBtn.innerHTML = icons.playerPlay;
+        scrollBtn.classList.remove('active');
         scrollBtn.classList.remove('armed');
         scrollBtn.classList.remove('tempo-pulse');
     }
@@ -139,13 +139,13 @@ function parsePlaylist(csvData) {
         clearTimeout(autoPlayDelayTimeout);
         isAutoPlay = false;
         const autoPlayBtn = document.getElementById('autoPlayBtn');
-        autoPlayBtn.innerHTML = icons.autoPlay;
+        autoPlayBtn.classList.remove('active');
         autoPlayBtn.classList.remove('armed');
         autoPlayBtn.classList.remove('tempo-pulse');
     }
     
     // Show mobile tab when playlist is loaded
-    showMobileTab();
+    toggleMobileRightBar(true);
     
     if (typeof Papa === 'undefined') {
         console.error('PapaParse library not loaded');
@@ -242,7 +242,7 @@ function loadSong(index) {
         console.log('Invalid song index:', index);
         return;
     }
-    
+    toggleMobileRightBar(true);
     currentIndex = index;
     window.currentIndex = currentIndex; // Update global reference
     const song = playlist[currentIndex];
@@ -260,13 +260,18 @@ function loadSong(index) {
     contentWrapper.scrollTop = 0;
     
     // If autoplay is on and autoscroll is on, start autoscroll after 10 seconds with tempo pulsing
-    if (isAutoPlay && isScrolling) {
+    const scrollBtn = document.getElementById('scrollBtn');
+    if (isAutoPlay) {
+        // When autoplay is on, autoscroll should also be on
+        if (!isScrolling) {
+            isScrolling = true;
+        }
+        
         // Reset autoscroll state
-        const scrollBtn = document.getElementById('scrollBtn');
         clearInterval(scrollInterval);
         clearTimeout(scrollDelayTimeout);
         
-        scrollBtn.innerHTML = icons.playerPlay;
+        scrollBtn.classList.add('active');
         scrollBtn.classList.add('armed');
         scrollBtn.classList.add('tempo-pulse');
         
@@ -280,10 +285,10 @@ function loadSong(index) {
         }, 10000);
     } else if (isScrolling) {
         // If only autoscroll is on, start with tempo pulsing
-        const scrollBtn = document.getElementById('scrollBtn');
         clearInterval(scrollInterval);
         clearTimeout(scrollDelayTimeout);
         
+        scrollBtn.classList.add('active');
         scrollBtn.innerHTML = icons.playerPlay;
         scrollBtn.classList.add('armed');
         scrollBtn.classList.add('tempo-pulse');
@@ -413,12 +418,13 @@ function updatePlaylistHighlight() {
 // Scroll to section - fixed to work with contentWrapper
 function scrollToSection(direction) {
     // Stop autoscroll and autoplay when next section button is clicked
+    toggleMobileRightBar(true);
     if (isScrolling) {
         clearInterval(scrollInterval);
         clearTimeout(scrollDelayTimeout);
         isScrolling = false;
         const scrollBtn = document.getElementById('scrollBtn');
-        scrollBtn.innerHTML = icons.playerPlay;
+        scrollBtn.classList.remove('active');
         scrollBtn.classList.remove('armed');
         scrollBtn.classList.remove('tempo-pulse');
     }
@@ -428,7 +434,7 @@ function scrollToSection(direction) {
         clearTimeout(autoPlayDelayTimeout);
         isAutoPlay = false;
         const autoPlayBtn = document.getElementById('autoPlayBtn');
-        autoPlayBtn.innerHTML = icons.autoPlay;
+        autoPlayBtn.classList.remove('active');
         autoPlayBtn.classList.remove('armed');
         autoPlayBtn.classList.remove('tempo-pulse');
     }
@@ -473,6 +479,7 @@ function scrollToSection(direction) {
 
 // Toggle auto scroll - enhanced with delay and red indicator
 function toggleScroll() {
+    toggleMobileRightBar(true);
     const scrollBtn = document.getElementById('scrollBtn');
     const contentWrapper = document.getElementById('contentWrapper');
     
@@ -482,9 +489,11 @@ function toggleScroll() {
         clearTimeout(scrollDelayTimeout);
         isScrolling = false;
         scrollBtn.innerHTML = icons.playerPlay;
+        scrollBtn.classList.remove('active');
         scrollBtn.classList.remove('armed');
         scrollBtn.classList.remove('tempo-pulse');
     } else {
+        scrollBtn.classList.add('active');
         // Check if we're at the top of the song
         if (contentWrapper.scrollTop <= 10) {
             // Start scrolling with tempo-based pulsing for 10 seconds
@@ -521,7 +530,7 @@ function startScrolling() {
     const scrollBtn = document.getElementById('scrollBtn');
     const contentWrapper = document.getElementById('contentWrapper');
     
-    scrollBtn.innerHTML = icons.playerPause;
+    scrollBtn.innerHTML = icons.playerPlay;
     scrollBtn.classList.remove('armed');
     scrollBtn.classList.remove('tempo-pulse');
     
@@ -552,7 +561,7 @@ function startScrolling() {
                     } else {
                         // Stop autoplay at end of playlist
                         isAutoPlay = false;
-                        autoPlayBtn.innerHTML = icons.autoPlay;
+                        autoPlayBtn.classList.remove('active');
                         autoPlayBtn.classList.remove('armed');
                         autoPlayBtn.classList.remove('tempo-pulse');
                     }
@@ -588,25 +597,57 @@ function toggleMode() {
 // Toggle auto play - separate from autoscroll
 function toggleAutoPlay() {
     const autoPlayBtn = document.getElementById('autoPlayBtn');
-    
+    const scrollBtn = document.getElementById('scrollBtn');
+
+    toggleMobileRightBar(true);
+  
     if (isAutoPlay) {
         clearInterval(autoPlayInterval);
         clearTimeout(autoPlayDelayTimeout);
         isAutoPlay = false;
-        autoPlayBtn.innerHTML = icons.autoPlay;
+        autoPlayBtn.classList.remove('active');
         autoPlayBtn.classList.remove('armed');
         autoPlayBtn.classList.remove('tempo-pulse');
+        
+        // Also turn off autoscroll when autoplay is turned off
+        if (isScrolling) {
+            clearInterval(scrollInterval);
+            clearTimeout(scrollDelayTimeout);
+            isScrolling = false;
+            scrollBtn.classList.remove('active');
+            scrollBtn.classList.remove('armed');
+            scrollBtn.classList.remove('tempo-pulse');
+            scrollBtn.innerHTML = icons.playerPlay;
+        }
     } else {
         isAutoPlay = true;
-        autoPlayBtn.innerHTML = icons.playerPause;
-        autoPlayBtn.classList.add('armed');
+        autoPlayBtn.classList.add('active');
         
-        // Turn on autoscroll if not already on
+        // Always turn on autoscroll when autoplay is turned on
         if (!isScrolling) {
             isScrolling = true;
-            const scrollBtn = document.getElementById('scrollBtn');
-            scrollBtn.innerHTML = icons.playerPause;
-            scrollBtn.classList.add('armed');
+            scrollBtn.classList.add('active');
+            scrollBtn.innerHTML = icons.playerPlay;
+            
+            // Check if we're at the top of the song to determine if we should arm or start immediately
+            const contentWrapper = document.getElementById('contentWrapper');
+            if (contentWrapper.scrollTop <= 10) {
+                // At top - arm with delay
+                const currentSong = playlist[currentIndex];
+                const tempo = currentSong?.tempo || currentSong?.bpm || currentSong?.speed || 120;
+                const tempoDuration = 60 / parseInt(tempo);
+                
+                scrollBtn.classList.add('armed');
+                scrollBtn.classList.add('tempo-pulse');
+                scrollBtn.style.setProperty('--tempo-duration', `${tempoDuration}s`);
+                
+                scrollDelayTimeout = setTimeout(() => {
+                    startScrolling();
+                }, 10000);
+            } else {
+                // Not at top - start immediately
+                startScrolling();
+            }
         }
     }
 }
@@ -652,11 +693,15 @@ window.toggleAutoPlay = toggleAutoPlay;
 window.currentIndex = currentIndex;
 
 // Mobile responsive functions
-function showMobileTab() {
-    if (isMobile()) {
-        const mobileTab = document.getElementById('mobileTab');
+function toggleMobileTab(show = true) {
+    if (! isMobile()) { return };
+    const mobileTab = document.getElementById('mobileTab');
+    if (show){
         mobileTab.classList.add('mobile-show');
         mobileTab.classList.remove('mobile-hide');
+    } else {
+        mobileTab.classList.remove('mobile-show');
+        mobileTab.classList.add('mobile-hide');
     }
 }
 
@@ -664,30 +709,22 @@ function isMobile() {
     return window.innerWidth <= 768 || /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 }
 
-function toggleMobileRightBar() {
+function toggleMobileRightBar(close = false) {
     const rightBar = document.getElementById('rightBar');
     const overlay = document.getElementById('mobileOverlay');
     const mobileTab = document.getElementById('mobileTab');
     
-    if (rightBar.classList.contains('mobile-open')) {
-        closeMobileRightBar();
-    } else {
-        rightBar.classList.add('mobile-open');
-        overlay.classList.add('mobile-show');
-        mobileTab.classList.add('mobile-hide');
-    }
-}
-
-function closeMobileRightBar() {
-    const rightBar = document.getElementById('rightBar');
-    const overlay = document.getElementById('mobileOverlay');
-    const mobileTab = document.getElementById('mobileTab');
-    
-    rightBar.classList.remove('mobile-open');
-    overlay.classList.remove('mobile-show');
-    
-    if (isMobile() && playlist.length > 0) {
+    if (rightBar.classList.contains('mobile-open') || close) {
+      rightBar.classList.remove('mobile-open');
+      overlay.classList.remove('mobile-show');
+      
+      if (isMobile() && playlist.length > 0) {
         mobileTab.classList.remove('mobile-hide');
+      }
+   } else {
+      rightBar.classList.add('mobile-open');
+      overlay.classList.add('mobile-show');
+      mobileTab.classList.add('mobile-hide');
     }
 }
 
@@ -712,7 +749,7 @@ window.addEventListener('resize', function() {
 
 // Make mobile functions globally available
 window.toggleMobileRightBar = toggleMobileRightBar;
-window.closeMobileRightBar = closeMobileRightBar;
+window.closeMobileRightBar = toggleMobileRightBar;
 
 // Setup drag controls for font size and line height
 function setupDragControls() {
@@ -789,6 +826,13 @@ function setupDragControl(element, type) {
     }
 }
 
+function hideControls(){
+  if (isMobile()){
+    const mobileControl = document.getElementById('playlistDropdown');
+    mobileControl.classList.remove('show');
+  }
+
+}
 // Setup swipe support for mobile
 function setupSwipeSupport() {
     const contentWrapper = document.getElementById('contentWrapper');
