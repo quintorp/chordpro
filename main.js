@@ -20,7 +20,13 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeClock();
     setupFileInput();
     setupSwipeSupport();
-    updateNextButton();
+    
+    // Trigger CSV load request on page load
+    setTimeout(() => {
+        if (playlist.length === 0) {
+            document.getElementById('fileInput').click();
+        }
+    }, 1000);
     
     // Show mobile tab on mobile devices initially
     if (isMobile()) {
@@ -31,14 +37,16 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Initialize icons
 function initializeIcons() {
-    document.getElementById('nextIcon').innerHTML = icons.playerTrackNext;
-    document.getElementById('nextSectionBtn').innerHTML = icons.chevronDown;
+    document.getElementById('nextSectionBtn').innerHTML = icons.nextIcon;
     document.getElementById('scrollBtn').innerHTML = icons.playerPlay;
+    document.getElementById('nextSongBtn').innerHTML = icons.playerTrackNext;
+    document.getElementById('autoPlayBtn').innerHTML = icons.autoPlay;
+
     document.getElementById('lineHeightDownBtn').innerHTML = icons.lineHeight + '-';
     document.getElementById('lineHeightUpBtn').innerHTML = icons.lineHeight + '+';
     document.getElementById('modeBtn').innerHTML = icons.brightness;
-    document.getElementById('autoPlayBtn').innerHTML = icons.playerTrackNext;
     document.getElementById('fileImportBtn').innerHTML = icons.fileImport;
+    document.getElementById('initImportBtn').innerHTML = 'Load a song file (CSV)' + icons.fileImport;
 }
 
 // Clock functionality
@@ -70,6 +78,13 @@ function setupFileInput() {
 
 // Handle CSV file selection
 function handleFileSelect(event) {
+  const initImportBtn = document.getElementById("initImportBtn");
+  const rightBar = document.getElementById("rightBar");
+    console.log(window.getComputedStyle(initImportBtn).display == 'flex');
+    if (window.getComputedStyle(initImportBtn).display == 'flex'){
+      rightBar.style.display = 'flex';
+      initImportBtn.style.display = 'none';
+    }
     const file = event.target.files[0];
     console.log('File selected:', file);
     
@@ -104,6 +119,27 @@ function handleFileSelect(event) {
 // Parse CSV playlist
 function parsePlaylist(csvData) {
     console.log('Parsing CSV data...');
+    
+    // Stop autoscroll and autoplay when new playlist is loaded
+    if (isScrolling) {
+        clearInterval(scrollInterval);
+        clearTimeout(scrollDelayTimeout);
+        isScrolling = false;
+        const scrollBtn = document.getElementById('scrollBtn');
+        scrollBtn.innerHTML = icons.playerPlay;
+        scrollBtn.classList.remove('armed');
+        scrollBtn.classList.remove('tempo-pulse');
+    }
+    
+    if (isAutoPlay) {
+        clearInterval(autoPlayInterval);
+        clearTimeout(autoPlayDelayTimeout);
+        isAutoPlay = false;
+        const autoPlayBtn = document.getElementById('autoPlayBtn');
+        autoPlayBtn.innerHTML = icons.autoPlay;
+        autoPlayBtn.classList.remove('armed');
+        autoPlayBtn.classList.remove('tempo-pulse');
+    }
     
     // Show mobile tab when playlist is loaded
     showMobileTab();
@@ -157,6 +193,11 @@ function parsePlaylist(csvData) {
 // Populate playlist dropdown
 function populatePlaylistDropdown() {
     const dropdown = document.getElementById('playlistDropdown');
+    if (!dropdown) {
+        console.error('Playlist dropdown element not found');
+        return;
+    }
+    
     dropdown.innerHTML = '';
     
     playlist.forEach((song, index) => {
@@ -176,11 +217,16 @@ function populatePlaylistDropdown() {
 function togglePlaylistDropdown(event) {
     event.stopPropagation();
     const dropdown = document.getElementById('playlistDropdown');
+    if (!dropdown) {
+        console.error('Playlist dropdown element not found');
+        return;
+    }
+    
     dropdown.classList.toggle('show');
     
     // Close dropdown when clicking outside
     document.addEventListener('click', function closeDropdown(e) {
-        if (!dropdown.contains(e.target)) {
+        if (!dropdown.contains(e.target) && !document.getElementById('playlistTitleBtn').contains(e.target)) {
             dropdown.classList.remove('show');
             document.removeEventListener('click', closeDropdown);
         }
@@ -199,17 +245,58 @@ function loadSong(index) {
     const song = playlist[currentIndex];
     console.log('Loading song:', song);
     
-    // Update lyrics panel
+    // Show gradients when song is loaded
     const lyricsPanel = document.getElementById('lyricsPanel');
+    lyricsPanel.classList.add('song-loaded');
+    
+    // Update lyrics panel
     lyricsPanel.innerHTML = formatChordProSong(song);
     
     // Reset scroll position to top
     const contentWrapper = document.getElementById('contentWrapper');
     contentWrapper.scrollTop = 0;
     
+    // If autoplay is on and autoscroll is on, start autoscroll after 10 seconds with tempo pulsing
+    if (isAutoPlay && isScrolling) {
+        // Reset autoscroll state
+        const scrollBtn = document.getElementById('scrollBtn');
+        clearInterval(scrollInterval);
+        clearTimeout(scrollDelayTimeout);
+        
+        scrollBtn.innerHTML = icons.playerPlay;
+        scrollBtn.classList.add('armed');
+        scrollBtn.classList.add('tempo-pulse');
+        
+        const currentSong = playlist[currentIndex];
+        const tempo = currentSong?.tempo || currentSong?.bpm || currentSong?.speed || 120;
+        const tempoDuration = 60 / parseInt(tempo);
+        scrollBtn.style.setProperty('--tempo-duration', `${tempoDuration}s`);
+        
+        scrollDelayTimeout = setTimeout(() => {
+            startScrolling();
+        }, 10000);
+    } else if (isScrolling) {
+        // If only autoscroll is on, start with tempo pulsing
+        const scrollBtn = document.getElementById('scrollBtn');
+        clearInterval(scrollInterval);
+        clearTimeout(scrollDelayTimeout);
+        
+        scrollBtn.innerHTML = icons.playerPlay;
+        scrollBtn.classList.add('armed');
+        scrollBtn.classList.add('tempo-pulse');
+        
+        const currentSong = playlist[currentIndex];
+        const tempo = currentSong?.tempo || currentSong?.bpm || currentSong?.speed || 120;
+        const tempoDuration = 60 / parseInt(tempo);
+        scrollBtn.style.setProperty('--tempo-duration', `${tempoDuration}s`);
+        
+        scrollDelayTimeout = setTimeout(() => {
+            startScrolling();
+        }, 10000);
+    }
+    
     // Update song info
     updateSongInfo(song);
-    updateNextButton();
     updatePlaylistHighlight();
     
     // Close dropdown
@@ -273,14 +360,26 @@ function formatDuration(seconds) {
 // Update song info box
 function updateSongInfo(song) {
     const infoBox = document.getElementById('songInfoBox');
+    const titleDisplay = document.getElementById('songTitleDisplay');
     
     // Try different possible column names
     const title = song.title || song.name || song.song || song.songname || 'Unknown Title';
+    const capo = song.capo || song.capo_fret || '';
+    const chords = song.chords || song.chord_progression || song.chord_sequence || '';
     const key = song.key || song.songkey || song.chord_key || '';
     const tempo = song.tempo || song.bpm || song.speed || '';
     const duration = song.duration || song.length || song.time || '';
+console.log(playlist.indexOf(song) < playlist.length);
+    const nextSongIndex = playlist.indexOf(song) + 1;
+    const nextTitle = (nextSongIndex < playlist.length) ?
+      playlist[nextSongIndex].title : "";
+    
+    // Update title bar
+    titleDisplay.textContent = title;
     
     let metadataHtml = '';
+    if (capo) metadataHtml += `<span class="capo-info">Capo: ${capo}</span><br>`;
+    if (chords) metadataHtml += `<span class="chords-info">Chords:<br>${chords}</span><br>`;
     if (key) metadataHtml += `Key: ${key}<br>`;
     if (tempo) metadataHtml += `Tempo: ${tempo}<br>`;
     if (duration) {
@@ -289,28 +388,9 @@ function updateSongInfo(song) {
     }
     
     infoBox.innerHTML = `
-        <div class="song-title">${title}</div>
-        <div class="song-counter"><strong>${currentIndex + 1} of ${playlist.length}</strong></div>
         <div class="song-metadata">${metadataHtml}</div>
-    `;
-}
-
-// Update next button
-function updateNextButton() {
-    const nextBtn = document.getElementById('nextBtn');
-    const nextTitle = document.getElementById('nextTitle');
-    
-    if (currentIndex < playlist.length - 1) {
-        const nextSong = playlist[currentIndex + 1];
-        const title = nextSong.title || nextSong.name || nextSong.song || nextSong.songname || `Song ${currentIndex + 2}`;
-        nextTitle.textContent = title;
-        nextBtn.style.opacity = '1';
-        nextBtn.disabled = false;
-    } else {
-        nextTitle.textContent = 'End of Playlist';
-        nextBtn.style.opacity = '0.5';
-        nextBtn.disabled = true;
-    }
+        <div class="song-next-info">${currentIndex + 1} of ${playlist.length}</div>
+        <div class="song-next-info">Next: ${nextTitle}</div>`;
 }
 
 // Update playlist title button
@@ -329,6 +409,27 @@ function updatePlaylistHighlight() {
 
 // Scroll to section - fixed to work with contentWrapper
 function scrollToSection(direction) {
+    // Stop autoscroll and autoplay when next section button is clicked
+    if (isScrolling) {
+        clearInterval(scrollInterval);
+        clearTimeout(scrollDelayTimeout);
+        isScrolling = false;
+        const scrollBtn = document.getElementById('scrollBtn');
+        scrollBtn.innerHTML = icons.playerPlay;
+        scrollBtn.classList.remove('armed');
+        scrollBtn.classList.remove('tempo-pulse');
+    }
+    
+    if (isAutoPlay) {
+        clearInterval(autoPlayInterval);
+        clearTimeout(autoPlayDelayTimeout);
+        isAutoPlay = false;
+        const autoPlayBtn = document.getElementById('autoPlayBtn');
+        autoPlayBtn.innerHTML = icons.autoPlay;
+        autoPlayBtn.classList.remove('armed');
+        autoPlayBtn.classList.remove('tempo-pulse');
+    }
+    
     const contentWrapper = document.getElementById('contentWrapper');
     const sections = contentWrapper.querySelectorAll('.lyrics-section');
     
@@ -378,17 +479,13 @@ function toggleScroll() {
         clearTimeout(scrollDelayTimeout);
         isScrolling = false;
         scrollBtn.innerHTML = icons.playerPlay;
-        scrollBtn.style.backgroundColor = '';
+        scrollBtn.classList.remove('armed');
+        scrollBtn.classList.remove('tempo-pulse');
     } else {
         // Check if we're at the top of the song
         if (contentWrapper.scrollTop <= 10) {
-            // Add 10 second delay with yellow indicator
-            scrollBtn.innerHTML = icons.playerPlay;
-            scrollBtn.style.backgroundColor = '#FFD700';
-            
-            scrollDelayTimeout = setTimeout(() => {
-                startScrolling();
-            }, 10000);
+            // Start scrolling with tempo-based pulsing for 10 seconds
+            startScrollingWithDelay();
         } else {
             // Start scrolling immediately if not at top
             startScrolling();
@@ -397,13 +494,33 @@ function toggleScroll() {
     }
 }
 
+// Start scrolling with tempo-based delay
+function startScrollingWithDelay() {
+    const scrollBtn = document.getElementById('scrollBtn');
+    const currentSong = playlist[currentIndex];
+    const tempo = currentSong?.tempo || currentSong?.bpm || currentSong?.speed || 120;
+    
+    scrollBtn.innerHTML = icons.playerPlay;
+    scrollBtn.classList.add('armed');
+    scrollBtn.classList.add('tempo-pulse');
+    
+    // Set tempo-based pulsing
+    const tempoDuration = 60 / parseInt(tempo); // Convert BPM to seconds per beat
+    scrollBtn.style.setProperty('--tempo-duration', `${tempoDuration}s`);
+    
+    scrollDelayTimeout = setTimeout(() => {
+        startScrolling();
+    }, 10000);
+}
+
 // Start the actual scrolling
 function startScrolling() {
     const scrollBtn = document.getElementById('scrollBtn');
     const contentWrapper = document.getElementById('contentWrapper');
     
     scrollBtn.innerHTML = icons.playerPause;
-    scrollBtn.style.backgroundColor = '';
+    scrollBtn.classList.remove('armed');
+    scrollBtn.classList.remove('tempo-pulse');
     
     scrollInterval = setInterval(() => {
         contentWrapper.scrollTop += 1;
@@ -418,14 +535,23 @@ function startScrolling() {
             // Only advance to next song if autoplay is active
             if (isAutoPlay) {
                 const autoPlayBtn = document.getElementById('autoPlayBtn');
-                autoPlayBtn.style.backgroundColor = '#FFD700';
+                autoPlayBtn.classList.add('armed');
+                autoPlayBtn.classList.add('tempo-pulse');
+                
+                // Flash at 60 BPM (1 second intervals)
+                autoPlayBtn.style.setProperty('--tempo-duration', '1s');
                 
                 autoPlayDelayTimeout = setTimeout(() => {
-                    autoPlayBtn.style.backgroundColor = '';
+                    autoPlayBtn.classList.remove('armed');
+                    autoPlayBtn.classList.remove('tempo-pulse');
                     if (currentIndex < playlist.length - 1) {
                         loadSong(currentIndex + 1);
                     } else {
-                        toggleAutoPlay(); // Stop at end of playlist
+                        // Stop autoplay at end of playlist
+                        isAutoPlay = false;
+                        autoPlayBtn.innerHTML = icons.autoPlay;
+                        autoPlayBtn.classList.remove('armed');
+                        autoPlayBtn.classList.remove('tempo-pulse');
                     }
                 }, 10000);
             }
@@ -464,13 +590,21 @@ function toggleAutoPlay() {
         clearInterval(autoPlayInterval);
         clearTimeout(autoPlayDelayTimeout);
         isAutoPlay = false;
-        autoPlayBtn.innerHTML = icons.playerTrackNext;
-        autoPlayBtn.style.backgroundColor = '';
+        autoPlayBtn.innerHTML = icons.autoPlay;
+        autoPlayBtn.classList.remove('armed');
+        autoPlayBtn.classList.remove('tempo-pulse');
     } else {
         isAutoPlay = true;
         autoPlayBtn.innerHTML = icons.playerPause;
-        autoPlayBtn.style.backgroundColor = '#FFD700';
-        // Note: Autoplay will advance songs when scroll finishes, not on a timer
+        autoPlayBtn.classList.add('armed');
+        
+        // Turn on autoscroll if not already on
+        if (!isScrolling) {
+            isScrolling = true;
+            const scrollBtn = document.getElementById('scrollBtn');
+            scrollBtn.innerHTML = icons.playerPause;
+            scrollBtn.classList.add('armed');
+        }
     }
 }
 
