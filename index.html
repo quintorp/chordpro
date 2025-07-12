@@ -13,9 +13,15 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 </head>
 <body>
-  <div id="contentWrapper">
-    <div id="lyricsPanel">Load a song file (CSV) to begin.</div>
+  <div id="songTitleBar">
+    <div class="song-title-display" id="songTitleDisplay">PLAYLIST PLAYER</div>
   </div>
+  
+  <div id="mainContent">
+    <div id="contentWrapper">
+      <div id="lyricsPanel"></div>
+      <label class="control-button primary-button armed" for="fileInput" id="initImportBtn"></label>
+    </div>
   
   <!-- Mobile tab for opening right bar -->
   <button id="mobileTab" onclick="toggleMobileRightBar()">CONTROLS</button>
@@ -27,26 +33,24 @@
     <button class="control-button" id="playlistTitleBtn" onclick="togglePlaylistDropdown(event)">Playlist Title</button>
     <div id="playlistDropdown"></div>
     <div id="clock"></div>
+    <button class="control-button primary-button" onclick="scrollToSection(1)" title="Next Section" id="nextSectionBtn"></button>
+    <button class="control-button primary-button" onclick="toggleScroll()" id="scrollBtn"></button>
+    <button class="control-button primary-button green-icon" id="nextSongBtn" onclick="loadSong(currentIndex + 1)"><span id="nextIcon"></span></button>
+    <button class="control-button primary-button green-icon" onclick="toggleAutoPlay()" id="autoPlayBtn"></button>
     <div id="songInfoBox"></div>
-    <div class="control-pair">
-      <button class="control-button" onclick="scrollToSection(1)" title="Next Section" id="nextSectionBtn"></button>
-      <button class="control-button" onclick="toggleScroll()" id="scrollBtn"></button>
-    </div>
-    <button class="control-button" id="nextBtn" onclick="loadSong(currentIndex + 1)"><span id="nextTitle">Song Title</span> <span id="nextIcon"></span></button>
     <div class="bottom-controls">
       <div class="control-pair">
-        <button class="control-button" onclick="adjustFont(-1)">A-</button>
-        <button class="control-button" onclick="adjustFont(1)">A+</button>
+        <button class="control-button secondary-button" onclick="adjustFont(-1)">A-</button>
+        <button class="control-button secondary-button" onclick="adjustFont(1)">A+</button>
       </div>
       <div class="control-pair">
-        <button class="control-button" onclick="adjustLineHeight(-1)" title="Decrease Line Spacing" id="lineHeightDownBtn">-</button>
-        <button class="control-button" onclick="adjustLineHeight(1)" title="Increase Line Spacing" id="lineHeightUpBtn">+</button>
+        <button class="control-button secondary-button" onclick="adjustLineHeight(-1)" title="Decrease Line Spacing" id="lineHeightDownBtn">A-</button>
+        <button class="control-button secondary-button" onclick="adjustLineHeight(1)" title="Increase Line Spacing" id="lineHeightUpBtn">+</button>
       </div>
       <div class="control-pair">
-        <button class="control-button" onclick="toggleMode()" id="modeBtn"></button>
-        <button class="control-button" onclick="toggleAutoPlay()" id="autoPlayBtn"></button>
+        <button class="control-button secondary-button" onclick="toggleMode()" id="modeBtn"></button>
+        <label class="control-button secondary-button half-width" for="fileInput" id="fileImportBtn"></label>
       </div>
-      <label class="control-button" for="fileInput" id="fileImportBtn"></label>
     </div>
   </div>
 
