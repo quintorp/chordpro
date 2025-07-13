@@ -26,19 +26,13 @@ Drag to rearrange list
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 </head>
 <body>
-  <div id="songTitleBar">
-    <div class="song-title-display" id="songTitleDisplay">PLAYLIST PLAYER</div>
-  </div>
   
   <div id="mainContent">
     <div id="contentWrapper">
       <div id="lyricsPanel"></div>
       <label class="control-button primary-button tempo-pulse" for="fileInput" id="initImportBtn"></label>
     </div>
-  
-  <!-- Mobile tab for opening right bar -->
-  <button id="mobileTab" onclick="toggleMobileRightBar()">CONTROLS</button>
-  
+    
   <!-- Mobile overlay for closing right bar -->
   <div id="mobileOverlay" onclick="closeMobileRightBar()"></div>
 
@@ -46,10 +40,7 @@ Drag to rearrange list
     <button class="control-button primary-button" id="playlistTitleBtn" onclick="togglePlaylistDropdown(event)">Playlist Title</button>
     <div id="playlistDropdown"></div>
     <div id="clock"></div>
-    <button class="control-button primary-button" onclick="scrollToSection(1)" title="Next Section" id="nextSectionBtn"></button>
-    <button class="control-button primary-button" onclick="toggleScroll()" id="scrollBtn"></button>
-    <button class="control-button primary-button" id="nextSongBtn" onclick="loadSong(currentIndex + 1)"><span id="nextIcon"></span></button>
-    <button class="control-button primary-button" onclick="toggleAutoPlay()" id="autoPlayBtn"></button>
+    <button class="control-button primary-button" onclick="handleAutoPlay()" id="autoPlayBtn"></button>
     <div id="songInfoBox"></div>
     <div class="bottom-controls">
       <div class="control-pair">
