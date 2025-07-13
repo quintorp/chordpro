@@ -137,7 +137,7 @@ html, body {
   font-weight: bold;
   font-size: 1em;
   background-color: #222222;
-  border: 1px solid;
+  border: 0.5px solid;
   padding: 0px 6px;
   border-radius: 4px;
   margin: 1px;
@@ -151,17 +151,8 @@ html, body {
   100% { border-color: #00DD00; }
 }
 
-.control-button.armed {
-  border-color: #00DD00;
-}
-
 /* Active state - solid border when feature is ON */
 .control-button.active {
-  border-color: #00DD00;
-}
-
-/* Armed state - pulsing border during timing periods */
-.control-button.armed {
   border-color: #00DD00;
 }
 
@@ -212,10 +203,6 @@ html, body {
   /* background-color: #666; */
 }
 
-.control-button.armed {
-/* border-color: #00DD00; */
-}
-
 .control-button i {
   font-size: 20px;
   font-weight: bold;
@@ -239,7 +226,7 @@ html, body {
 .primary-button {
   color: #00DD00;
   width: 100%;
-  height: 80px;
+  height: 120px;
 }
 
 .primary-button:hover {
@@ -302,6 +289,7 @@ html, body {
   font-size: 18px;
   margin-bottom: 2px;
   opacity: 0.9;
+  pointer-events: none;
 }
 
 .drag-control:hover {
@@ -487,40 +475,6 @@ body.light-mode #contentWrapper::-webkit-scrollbar-thumb:hover {
   display: none;
 }
 
-/* Mobile tab for opening the right bar */
-#mobileTab {
-  position: fixed;
-  top: 50%;
-  right: 0;
-  transform: translateY(-50%);
-  background-color: #333;
-  color: #00DD00;
-  border: none;
-  padding: 20px 8px;
-  border-radius: 8px 0 0 8px;
-  cursor: pointer;
-  font-size: 14px;
-  font-weight: bold;
-  z-index: 999;
-  transition: background-color 0.3s ease;
-  writing-mode: vertical-lr;
-  text-orientation: mixed;
-  display: none;
-}
-
-#mobileTab:hover {
-  background-color: #444;
-}
-
-/* Show mobile tab by default on mobile */
-#mobileTab.mobile-show {
-  display: block;
-}
-
-#mobileTab.mobile-hide {
-  display: none;
-}
-
 /* Overlay for closing the sidebar */
 #mobileOverlay {
   position: fixed;
@@ -599,10 +553,6 @@ body.light-mode .control-button:hover {
   background-color: #c0c0c0;
 }
 
-body.light-mode .control-button.armed {
-  border-color: #008800;
-}
-
 body.light-mode .primary-button {
   background-color: #008800;
   color: #ffffff;
@@ -670,15 +620,6 @@ body.light-mode .song-metadata {
   color: #555;
 }
 
-body.light-mode #mobileTab {
-  background-color: #e0e0e0;
-  color: #008800;
-}
-
-body.light-mode #mobileTab:hover {
-  background-color: #d0d0d0;
-}
-
 /* Mobile responsive design */
 @media (max-width: 768px) {
   body {
@@ -722,48 +663,3 @@ body.light-mode #mobileTab:hover {
     box-shadow: -5px 0 15px rgba(0, 0, 0, 0.5);
   }
   
-  #playlistTitleBtn {
-    border-radius: 6px;
-  }
-  
-  #playlistDropdown {
-    /* width: 100%; */
-    /* max-width: 250px; */
-    z-index: 99999;
-  }
-  
-  .control-button {
-    font-size: 16px;
-    padding: 12px 14px;
-  }
-  
-  #clock {
-    font-size: 24px;
-    padding: 12px;
-  }
-  
-  #songInfoBox {
-    padding: 12px;
-  }
-  
-  .song-title-display {
-    font-size: 18px;
-  }
-}
-
-/* Tablet responsive design */
-@media (min-width: 769px) and (max-width: 1024px) {
-  #rightBar {
-    width: 22%;
-    min-width: 220px;
-  }
-  
-  .control-button {
-    /*font-size: 16px;*/
-    padding: 12px 14px;
-  }
-  
-  #clock {
-    font-size: 24px;
-  }
-}
