@@ -260,7 +260,8 @@ function loadSong(index) {
     contentWrapper.scrollTop = 0;
     
     // If autoplay is on and autoscroll is on, start autoscroll after 10 seconds with tempo pulsing
-    const scrollBtn = document.getElementById('scrollBtn');
+    // const scrollBtn = document.getElementById('scrollBtn');
+    const autoPlayBtn = document.getElementById('autoPlayBtn');
     if (isAutoPlay) {
         // When autoplay is on, autoscroll should also be on
         if (!isScrolling) {
@@ -271,14 +272,16 @@ function loadSong(index) {
         clearInterval(scrollInterval);
         clearTimeout(scrollDelayTimeout);
         
-        scrollBtn.classList.add('active');
-        scrollBtn.classList.add('armed');
-        scrollBtn.classList.add('tempo-pulse');
+        autoPlayBtn.classList.add('active');
+        autoPlayBtn.classList.add('armed');
+        autoPlayBtn.classList.add('tempo-pulse');
+        autoPlayBtn.innerHTML = icons.playerPlay;
+    
         
         const currentSong = playlist[currentIndex];
         const tempo = currentSong?.tempo || currentSong?.bpm || currentSong?.speed || 120;
         const tempoDuration = 60 / parseInt(tempo);
-        scrollBtn.style.setProperty('--tempo-duration', `${tempoDuration}s`);
+        autoPlayBtn.style.setProperty('--tempo-duration', `${tempoDuration}s`);
         
         scrollDelayTimeout = setTimeout(() => {
             startScrolling();
@@ -288,15 +291,15 @@ function loadSong(index) {
         clearInterval(scrollInterval);
         clearTimeout(scrollDelayTimeout);
         
-        scrollBtn.classList.add('active');
-        scrollBtn.innerHTML = icons.playerPlay;
-        scrollBtn.classList.add('armed');
-        scrollBtn.classList.add('tempo-pulse');
+        autoPlayBtn.classList.add('active');
+        autoPlayBtn.innerHTML = icons.playerPlay;
+        autoPlayBtn.classList.add('armed');
+        autoPlayBtn.classList.add('tempo-pulse');
         
         const currentSong = playlist[currentIndex];
         const tempo = currentSong?.tempo || currentSong?.bpm || currentSong?.speed || 120;
         const tempoDuration = 60 / parseInt(tempo);
-        scrollBtn.style.setProperty('--tempo-duration', `${tempoDuration}s`);
+        autoPlayBtn.style.setProperty('--tempo-duration', `${tempoDuration}s`);
         
         scrollDelayTimeout = setTimeout(() => {
             startScrolling();
@@ -527,12 +530,13 @@ function startScrollingWithDelay() {
 
 // Start the actual scrolling
 function startScrolling() {
-    const scrollBtn = document.getElementById('scrollBtn');
+    // const scrollBtn = document.getElementById('scrollBtn');
+    const autoPlayBtn = document.getElementById('autoPlayBtn');
     const contentWrapper = document.getElementById('contentWrapper');
     
-    scrollBtn.innerHTML = icons.playerPlay;
-    scrollBtn.classList.remove('armed');
-    scrollBtn.classList.remove('tempo-pulse');
+    autoPlayBtn.innerHTML = icons.playerPlay;
+    autoPlayBtn.classList.remove('armed');
+    autoPlayBtn.classList.remove('tempo-pulse');
     
     scrollInterval = setInterval(() => {
         contentWrapper.scrollTop += 1;
@@ -546,13 +550,13 @@ function startScrolling() {
             
             // Only advance to next song if autoplay is active
             if (isAutoPlay) {
-                const autoPlayBtn = document.getElementById('autoPlayBtn');
+                // const autoPlayBtn = document.getElementById('autoPlayBtn');
                 autoPlayBtn.classList.add('armed');
                 autoPlayBtn.classList.add('tempo-pulse');
                 
                 // Flash at 60 BPM (1 second intervals)
                 autoPlayBtn.style.setProperty('--tempo-duration', '1s');
-                
+                autoPlayBtn.innerHTML = icons.autoPlay;
                 autoPlayDelayTimeout = setTimeout(() => {
                     autoPlayBtn.classList.remove('armed');
                     autoPlayBtn.classList.remove('tempo-pulse');
@@ -597,7 +601,7 @@ function toggleMode() {
 // Toggle auto play - separate from autoscroll
 function toggleAutoPlay() {
     const autoPlayBtn = document.getElementById('autoPlayBtn');
-    const scrollBtn = document.getElementById('scrollBtn');
+    // const scrollBtn = document.getElementById('scrollBtn');
 
     toggleMobileRightBar(true);
   
@@ -614,10 +618,10 @@ function toggleAutoPlay() {
             clearInterval(scrollInterval);
             clearTimeout(scrollDelayTimeout);
             isScrolling = false;
-            scrollBtn.classList.remove('active');
-            scrollBtn.classList.remove('armed');
-            scrollBtn.classList.remove('tempo-pulse');
-            scrollBtn.innerHTML = icons.playerPlay;
+            // scrollBtn.classList.remove('active');
+            // scrollBtn.classList.remove('armed');
+            // scrollBtn.classList.remove('tempo-pulse');
+            // scrollBtn.innerHTML = icons.playerPlay;
         }
     } else {
         isAutoPlay = true;
@@ -637,9 +641,12 @@ function toggleAutoPlay() {
                 const tempo = currentSong?.tempo || currentSong?.bpm || currentSong?.speed || 120;
                 const tempoDuration = 60 / parseInt(tempo);
                 
-                scrollBtn.classList.add('armed');
-                scrollBtn.classList.add('tempo-pulse');
-                scrollBtn.style.setProperty('--tempo-duration', `${tempoDuration}s`);
+                // scrollBtn.classList.add('armed');
+                // scrollBtn.classList.add('tempo-pulse');
+                // scrollBtn.style.setProperty('--tempo-duration', `${tempoDuration}s`);
+                autoPlayBtn.classList.add('armed');
+                autoPlayBtn.classList.add('tempo-pulse');
+                autoPlayBtn.style.setProperty('--tempo-duration', `${tempoDuration}s`);
                 
                 scrollDelayTimeout = setTimeout(() => {
                     startScrolling();
@@ -751,90 +758,202 @@ window.addEventListener('resize', function() {
 window.toggleMobileRightBar = toggleMobileRightBar;
 window.closeMobileRightBar = toggleMobileRightBar;
 
-// Setup drag controls for font size and line height
+/* let currentFontSize = 16;
+ let currentLineHeight = 1.5; */
 function setupDragControls() {
-    const fontSizeControl = document.getElementById('fontSizeControl');
-    const lineHeightControl = document.getElementById('lineHeightControl');
-    
-    setupDragControl(fontSizeControl, 'fontSize');
-    setupDragControl(lineHeightControl, 'lineHeight');
+  const lyricsPanel = document.getElementById('lyricsPanel');
+  let isPinching = false;
+  let gestureStart = [];
+  let swipeStartX = null;
+
+  lyricsPanel.addEventListener('touchstart', (e) => {
+    if (e.touches.length === 2) {
+      // Begin pinch gesture
+      isPinching = true;
+      gestureStart = [
+        { x: e.touches[0].clientX, y: e.touches[0].clientY },
+        { x: e.touches[1].clientX, y: e.touches[1].clientY }
+      ];
+      e.preventDefault();
+    } else if (e.touches.length === 1 && !isPinching) {
+      // Begin swipe
+      swipeStartX = e.touches[0].clientX;
+    }
+  }, { passive: false });
+
+  lyricsPanel.addEventListener('touchmove', (e) => {
+    if (isPinching && e.touches.length === 2 && gestureStart.length === 2) {
+      const current = [
+        { x: e.touches[0].clientX, y: e.touches[0].clientY },
+        { x: e.touches[1].clientX, y: e.touches[1].clientY }
+      ];
+
+      const startDx = Math.abs(gestureStart[0].x - gestureStart[1].x);
+      const startDy = Math.abs(gestureStart[0].y - gestureStart[1].y);
+      const currentDx = Math.abs(current[0].x - current[1].x);
+      const currentDy = Math.abs(current[0].y - current[1].y);
+
+      const deltaX = currentDx - startDx;
+      const deltaY = currentDy - startDy;
+
+      // Update font size
+      const fontSizeSensitivity = 0.1;
+      currentFontSize = Math.max(12, Math.min(32, currentFontSize + deltaX * fontSizeSensitivity));
+      lyricsPanel.style.fontSize = currentFontSize + 'px';
+
+      // Update line height
+      const lineHeightSensitivity = 0.002;
+      currentLineHeight = Math.max(1.0, Math.min(2.5, currentLineHeight + deltaY * lineHeightSensitivity));
+      lyricsPanel.style.lineHeight = currentLineHeight;
+
+      gestureStart = current;
+      e.preventDefault();
+    }
+  }, { passive: false });
+
+  lyricsPanel.addEventListener('touchend', (e) => {
+    if (isPinching) {
+      // End pinch gesture — suppress swipe
+      if (e.touches.length < 2) {
+        isPinching = false;
+        gestureStart = [];
+        swipeStartX = null; // prevent swipe from firing
+      }
+      return; // Skip swipe detection
+    }
+
+    // Swipe detection only if not pinching and it was a one-finger touch
+    if (swipeStartX !== null && e.changedTouches.length === 1) {
+      const endX = e.changedTouches[0].clientX;
+      const dx = endX - swipeStartX;
+      const threshold = 30;
+
+      if (dx > threshold) {
+        sendMessage("Swipe Right");
+      } else if (dx < -threshold) {
+        sendMessage("Swipe Left");
+      }
+    }
+
+    // Reset swipe start
+    swipeStartX = null;
+  });
 }
 
-function setupDragControl(element, type) {
-    let isDragging = false;
-    let startY = 0;
-    let startValue = 0;
-    
-    // Mouse events
-    element.addEventListener('mousedown', startDrag);
-    document.addEventListener('mousemove', drag);
-    document.addEventListener('mouseup', endDrag);
-    
-    // Touch events
-    element.addEventListener('touchstart', startDrag, { passive: false });
-    document.addEventListener('touchmove', drag, { passive: false });
-    document.addEventListener('touchend', endDrag);
-    
-    function startDrag(e) {
-        e.preventDefault();
-        isDragging = true;
-        element.classList.add('dragging');
-        
-        const clientY = e.type === 'touchstart' ? e.touches[0].clientY : e.clientY;
-        startY = clientY;
-        
-        if (type === 'fontSize') {
-            startValue = currentFontSize;
-        } else if (type === 'lineHeight') {
-            startValue = currentLineHeight;
-        }
-        
-        document.body.style.cursor = 'ns-resize';
-    }
-    
-    function drag(e) {
-        if (!isDragging) return;
-        e.preventDefault();
-        
-        const clientY = e.type === 'touchmove' ? e.touches[0].clientY : e.clientY;
-        const deltaY = startY - clientY; // Inverted: up = positive, down = negative
-        
-        if (type === 'fontSize') {
-            const sensitivity = 0.5; // pixels per pixel of mouse movement
-            const newValue = Math.max(12, Math.min(32, startValue + (deltaY * sensitivity)));
-            currentFontSize = newValue;
-            
-            const lyricsPanel = document.getElementById('lyricsPanel');
-            lyricsPanel.style.fontSize = currentFontSize + 'px';
-            
-        } else if (type === 'lineHeight') {
-            const sensitivity = 0.005; // line height units per pixel of mouse movement
-            const newValue = Math.max(1.0, Math.min(2.5, startValue + (deltaY * sensitivity)));
-            currentLineHeight = newValue;
-            
-            const lyricsPanel = document.getElementById('lyricsPanel');
-            lyricsPanel.style.lineHeight = currentLineHeight;
-        }
-    }
-    
-    function endDrag(e) {
-        if (!isDragging) return;
-        
-        isDragging = false;
-        element.classList.remove('dragging');
-        document.body.style.cursor = '';
-    }
+function sendMessage(msg) {
+  console.log("Gesture:", msg);
 }
+// Block pinch zoom (multi-touch)
+document.addEventListener('touchstart', function(e) {
+  if (e.touches.length > 1) {
+    e.preventDefault();
+  }
+}, { passive: false });
+
+// Block double-tap zoom
+let lastTouch = 0;
+document.addEventListener('touchend', function(e) {
+  const now = new Date().getTime();
+  if (now - lastTouch <= 300) {
+    e.preventDefault();
+  }
+  lastTouch = now;
+}, false);
+
+
+// Initialize touch controls
+/* setupTouchGestures(); */
+
+// Setup drag controls for font size and line height
+/* function setupDragControls() {*/
+//     const fontSizeControl = document.getElementById('fontSizeControl');
+//     const lineHeightControl = document.getElementById('lineHeightControl');
+    
+//     setupDragControl(fontSizeControl, 'fontSize');
+//     setupDragControl(lineHeightControl, 'lineHeight');
+// }
+
+// function setupDragControl(element, type) {
+//     let isDragging = false;
+//     let startY = 0;
+//     let startValue = 0;
+    
+//     // Mouse events
+//     element.addEventListener('mousedown', startDrag);
+//     document.addEventListener('mousemove', drag);
+//     document.addEventListener('mouseup', endDrag);
+    
+//     // Touch events
+//     element.addEventListener('touchstart', startDrag, { passive: false });
+//     document.addEventListener('touchmove', drag, { passive: false });
+//     document.addEventListener('touchend', endDrag);
+    
+//     function startDrag(e) {
+//         e.preventDefault();
+//         isDragging = true;
+//         element.classList.add('dragging');
+        
+//         const clientY = e.type === 'touchstart' ? e.touches[0].clientY : e.clientY;
+//         startY = clientY;
+        
+//         if (type === 'fontSize') {
+//             startValue = currentFontSize;
+//         } else if (type === 'lineHeight') {
+//             startValue = currentLineHeight;
+//         }
+        
+//         document.body.style.cursor = 'ns-resize';
+//     }
+    
+//     function drag(e) {
+//         if (!isDragging) return;
+//         e.preventDefault();
+        
+//         const clientY = e.type === 'touchmove' ? e.touches[0].clientY : e.clientY;
+//         const deltaY = startY - clientY; // Inverted: up = positive, down = negative
+        
+//         if (type === 'fontSize') {
+//             const sensitivity = 0.5; // pixels per pixel of mouse movement
+//             const newValue = Math.max(12, Math.min(32, startValue + (deltaY * sensitivity)));
+//             currentFontSize = newValue;
+            
+//             const lyricsPanel = document.getElementById('lyricsPanel');
+//             lyricsPanel.style.fontSize = currentFontSize + 'px';
+            
+//         } else if (type === 'lineHeight') {
+//             const sensitivity = 0.005; // line height units per pixel of mouse movement
+//             const newValue = Math.max(1.0, Math.min(2.5, startValue + (deltaY * sensitivity)));
+//             currentLineHeight = newValue;
+            
+//             const lyricsPanel = document.getElementById('lyricsPanel');
+//             lyricsPanel.style.lineHeight = currentLineHeight;
+//         }
+//     }
+    
+//     function endDrag(e) {
+//         if (!isDragging) return;
+        
+//         isDragging = false;
+//         element.classList.remove('dragging');
+//         document.body.style.cursor = '';
+//     }
+// }
 
 function hideControls(){
   if (isMobile()){
     const mobileControl = document.getElementById('playlistDropdown');
     mobileControl.classList.remove('show');
   }
-
 }
 // Setup swipe support for mobile
 function setupSwipeSupport() {
+       console.log(document.querySelectorAll('.drag-control').length);
+     if ('ontouchstart' in window || navigator.maxTouchPoints > 0) {
+       document.querySelectorAll('.drag-control').forEach(el => {
+        el.style.cssText += 'display: none !important;';
+      });
+    }
+
     const contentWrapper = document.getElementById('contentWrapper');
     let startX = 0;
     let startY = 0;
@@ -870,14 +989,14 @@ function setupSwipeSupport() {
                     loadSong(currentIndex + 1);
                 }
             }
-        } else if (Math.abs(deltaY) > Math.abs(deltaX) && Math.abs(deltaY) > minSwipeDistance) {
-            if (deltaY < 0) {
-                // Swipe up - next section
-                scrollToSection(1);
-            } else {
-                // Swipe down - previous section
-                scrollToSection(-1);
-            }
+        // } else if (Math.abs(deltaY) > Math.abs(deltaX) && Math.abs(deltaY) > minSwipeDistance) {
+        //     if (deltaY < 0) {
+        //         // Swipe up - next section
+        //         scrollToSection(1);
+        //     } else {
+        //         // Swipe down - previous section
+        //         scrollToSection(-1);
+        //     }
         }
     }
 }
