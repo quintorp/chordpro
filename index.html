@@ -1,8 +1,21 @@
 <!DOCTYPE html>
+<!--
+Two finger gesture: change font size, line spacing.
+Interface color picker
+Mobile
+  lose control tab
+  make title clickable for controls
+  button on left autoplay
+  button on right next song
+Store metadata - font size, line spacing, color - locally
+Drag to rearrange list
+-->
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
   <title>ChordPro Viewer</title>
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -20,7 +33,7 @@
   <div id="mainContent">
     <div id="contentWrapper">
       <div id="lyricsPanel"></div>
-      <label class="control-button primary-button armed" for="fileInput" id="initImportBtn"></label>
+      <label class="control-button primary-button tempo-pulse" for="fileInput" id="initImportBtn"></label>
     </div>
   
   <!-- Mobile tab for opening right bar -->
@@ -49,7 +62,7 @@
       </div>
       <div class="control-pair">
         <button class="control-button secondary-button" onclick="toggleMode()" id="modeBtn"></button>
-        <label class="control-button secondary-button half-width" for="fileInput" id="fileImportBtn"></label>
+        <label class="control-button secondary-button" for="fileInput" id="fileImportBtn"></label>
       </div>
     </div>
   </div>
