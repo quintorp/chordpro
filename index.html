@@ -16,7 +16,7 @@ Drag to rearrange list
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
-  <title>ChordPro Viewer</title>
+  <title>Playlist Player</title>
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="ChordPro Viewer" />
@@ -26,34 +26,42 @@ Drag to rearrange list
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 </head>
 <body>
-  
+
+  <div id="titlebar" class='clickable' tabindex="0">
+  <div id="titlebarClock" class='clock'></div>
+  <div class="song-title-display" id="songTitleDisplay">PLAYLIST PLAYER</div>
+  <div id="titlebarIcon"></div>
+</div>
+
   <div id="mainContent">
-    <div id="contentWrapper">
+    <div id="contentWrapper" class='clickable'>
       <div id="lyricsPanel"></div>
-      <label class="control-button primary-button tempo-pulse" for="fileInput" id="initImportBtn"></label>
+      <label class="button pulse" for="fileInput" id="initImportBtn"></label>
     </div>
     
   <!-- Mobile overlay for closing right bar -->
-  <div id="mobileOverlay" onclick="closeMobileRightBar()"></div>
+  <div id="mobileOverlay" onclick="toggleMobilecontrolBar(true)"></div>
 
-  <div id="rightBar">
-    <button class="control-button primary-button" id="playlistTitleBtn" onclick="togglePlaylistDropdown(event)">Playlist Title</button>
+  <div id="controlBar">
     <div id="playlistDropdown"></div>
-    <div id="clock"></div>
-    <button class="control-button primary-button" onclick="handleAutoPlay()" id="autoPlayBtn"></button>
+    <div id="sidebarClock" class='clock'>></div>
+    <div class="button" onclick="handleAutoPlay()" id="autoPlayBtn"></div>
     <div id="songInfoBox"></div>
+    
     <div class="bottom-controls">
       <div class="control-pair">
-        <div class="control-button secondary-button drag-control" id="fontSizeControl" data-type="fontSize">
-          <div class="drag-control-icon" id="fontSizeIcon"></div>
+        <div class="button draggable" id="fontSizeControl" data-type="fontSize">
+          <div class="icon" id="fontSizeIcon"></div>
         </div>
-        <div class="control-button secondary-button drag-control" id="lineHeightControl" data-type="lineHeight">
-          <div class="drag-control-icon" id="lineHeightIcon"></div>
+        <div class="button draggable" id="lineHeightControl" data-type="lineHeight">
+          <div class="icon" id="lineHeightIcon"></div>
         </div>
       </div>
       <div class="control-pair">
-        <button class="control-button secondary-button" onclick="toggleMode()" id="modeBtn"></button>
-        <label class="control-button secondary-button" for="fileInput" id="fileImportBtn"></label>
+        <div class="button" onclick="toggleMode()" id="modeBtn">
+          <div class="icon" id="modeBtnIcon"></div>
+          </div>
+        <label class="button" for="fileInput" id="fileImportBtn"></label>
       </div>
     </div>
   </div>
