@@ -14,21 +14,15 @@ let playlistName = 'Playlist';
 
 // Initialize the app
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('App initialized');
-    initializeIcons();
-    initializeClock();
-    setupFileInput();
-    setupSwipeSupport();
-    setupDragControls();
+  console.log('App initialized');
+  initializeIcons();
+  initializeClock();
+  setupFileInput();
+  handleResize (true);
+  setupClickAndSwipeSupport();
+  makeResizablePanel();
 
-    // Trigger CSV load request on page load
-    setTimeout(() => {
-        if (playlist.length === 0) {
-            document.getElementById('fileInput')
-                .click();
-        }
-    }, 1000);
-);
+});
 
 function initializeIcons() {
     document.getElementById('initImportBtn')
@@ -39,10 +33,12 @@ function initializeIcons() {
         .innerHTML = icons.textSize;
     document.getElementById('lineHeightIcon')
         .innerHTML = icons.lineHeight;
-    document.getElementById('modeBtn')
+    document.getElementById('modeBtnIcon')
         .innerHTML = icons.brightness;
     document.getElementById('fileImportBtn')
         .innerHTML = icons.fileImport;
+    document.getElementById('titlebarIcon')
+        .innerHTML = icons.autoScroll;
 }
 
 function initializeClock() {
@@ -53,10 +49,11 @@ function initializeClock() {
             hour: 'numeric',
             minute: '2-digit'
         });
-        document.getElementById('clock')
-            .textContent = timeString;
-    }
-
+      document.querySelectorAll('.clock')
+        .forEach(clock => {
+        clock.textContent = timeString;
+        });
+  }
     updateClock();
     setInterval(updateClock, 1000);
 }
@@ -73,12 +70,10 @@ function setupFileInput() {
 
 function handleFileSelect(event) {
     const initImportBtn = document.getElementById("initImportBtn");
-    const rightBar = document.getElementById("rightBar");
-    console.log(window.getComputedStyle(initImportBtn)
-        .display == 'flex');
+    const controlBar = document.getElementById("controlBar");
     if (window.getComputedStyle(initImportBtn)
         .display == 'flex') {
-        rightBar.style.display = 'flex';
+        controlBar.style.display = 'flex';
         initImportBtn.style.display = 'none';
     }
     const file = event.target.files[0];
@@ -118,7 +113,7 @@ function parsePlaylist(csvData) {
     console.log('Parsing CSV data...');
 
     handleAutoPlay('cancel');
-    toggleMobileRightBar(true);
+    toggleMobilecontrolBar(true);
 
     if (typeof Papa === 'undefined') {
         console.error('PapaParse library not loaded');
@@ -186,32 +181,14 @@ function populatePlaylistDropdown() {
         item.onclick = () => loadSong(index);
         dropdown.appendChild(item);
     });
-
-    const titleBtn = document.getElementById('playlistTitleBtn');
-    titleBtn.textContent = playlistName;
 }
 
-function togglePlaylistDropdown(event) {
-    event.stopPropagation();
-    const dropdown = document.getElementById('playlistDropdown');
-    if (!dropdown) {
-        console.error('Playlist dropdown element not found');
-        return;
-    }
-
-    dropdown.classList.toggle('show');
-
-    // Close dropdown when clicking outside
-    document.addEventListener('click', function closeDropdown(e) {
-        if (!dropdown.contains(e.target) && !document.getElementById('playlistTitleBtn')
-            .contains(e.target)) {
-            dropdown.classList.remove('show');
-            document.removeEventListener('click', closeDropdown);
-        }
-    });
+function showPLaylist() {
+  document.getElementById('playlistDropdown').style.display = 'block';
 }
 
 function loadSong(index) {
+    document.getElementById('playlistDropdown').style.display = 'none';
     if (index < 0 || index >= playlist.length) {
         console.log('Invalid song index:', index);
         return;
@@ -234,51 +211,57 @@ function loadSong(index) {
 
     document.getElementById('playlistDropdown')
         .classList.remove('show');
-    toggleMobileRightBar(true);
+    toggleMobilecontrolBar(true);
     updateSongInfo(song);
     updatePlaylistHighlight();
+    document.getElementById('songTitleDisplay').innerHtml = autoPlayOn;
     autoPlayOn ? handleAutoPlay('songTop') : null;
 }
 
 function handleAutoPlay(status = 'toggle') {
     const autoPlayBtn = document.getElementById('autoPlayBtn');
+    const titlebar = document.getElementById('titlebar');
+    const titlebarIcon = document.getElementById('titlebarIcon');
     const contentWrapper = document.getElementById('contentWrapper');
+// document.getElementById('songTitleDisplay').textContent = 'handleAutoPlay: '+ status;
     console.log ('handleAutoPlay: ', status);
 
     switch (status) {
+      case 'start':
+        autoPlayOn = false;
         case 'toggle':
+            autoPlayOn = !autoPlayOn;
             clearTimeout(autoPlayPause);
             clearInterval(scrollInterval);
-            toggleMobileRightBar(true);
-
-            autoPlayOn = !autoPlayOn;
+            toggleMobilecontrolBar(true);
 
             if ((!autoPlayOn) || (scrollEnd() && lastSong())){
                 handleAutoPlay('cancel');
                 return;
             }
-            autoPlayBtn.classList.add('active');
+            autoPlayBtn.classList.add('armed');
             if (scrollEnd()) {
               loadSong(currentIndex + 1);
             } else if (scrollEnd(true)) {
               handleAutoPlay ('songTop');
             } else {
-              handleAutoPlay ('startScroll');
+              handleAutoPlay ('scroll');
             }
 		        break;
 
         case 'songTop':
+            clearTimeout(autoPlayPause);
+            clearInterval(scrollInterval);
             autoPlayBtn.innerHTML = icons.autoScroll;
-            autoPlayBtn.classList.add('tempo-pulse');
-            autoPlayBtn.style.setProperty('--tempo-duration', `${getPulseRate()}s`);
+            titlebarIcon.innerHTML = icons.autoScroll;
+            pulseControls (true, true);
             autoPlayPause = setTimeout(() => {
-                handleAutoPlay('startScroll');
+                handleAutoPlay('scroll');
             }, 10000);
             break;
 
-        case 'startScroll':
-            autoPlayBtn.classList.remove('tempo-pulse');
-
+        case 'scroll':
+            pulseControls (false, null);
             scrollInterval = setInterval(() => {
                 contentWrapper.scrollTop += 1;
                 if (scrollEnd()) {
@@ -290,6 +273,8 @@ function handleAutoPlay(status = 'toggle') {
         case 'songEnd':
             clearInterval(scrollInterval);
             autoPlayBtn.innerHTML = icons.autoPlay;
+            titlebarIcon.innerHTML = icons.autoPlay;
+            pulseControls (true, false);
             if (lastSong()) {
                 handleAutoPlay('cancel');
                 return;
@@ -298,17 +283,17 @@ function handleAutoPlay(status = 'toggle') {
             autoPlayPause = setTimeout(() => {
                 loadSong(currentIndex + 1);
             }, 10000);
-            autoPlayBtn.classList.add('tempo-pulse');
-            autoPlayBtn.style.setProperty('--tempo-duration', '1s');
             break;
 
         case 'cancel':
             autoPlayOn = false;
             clearTimeout(autoPlayPause);
             clearInterval(scrollInterval);
+            autoPlayBtn.classList.remove('armed');
             autoPlayBtn.innerHTML = icons.autoScroll;
-            autoPlayBtn.classList.remove('active');
-            autoPlayBtn.classList.remove('tempo-pulse');
+            titlebarIcon.innerHTML = icons.autoScroll;
+
+            pulseControls (false, null);
             break;
 
         default:
@@ -316,10 +301,21 @@ function handleAutoPlay(status = 'toggle') {
             console.log('Unhandled status', status);
             break;
     }
-    function getPulseRate() {
-        const currentSong = playlist[currentIndex];
-        const tempo = currentSong?.tempo || currentSong?.bpm || currentSong?.speed || 120;
-        return 60 / parseInt(tempo);
+    function pulseControls (pulseOn = true, tempo){
+      const autoPlayBtn = document.getElementById('autoPlayBtn');
+      const titlebar = document.getElementById('titlebar');
+      const currentSong = playlist[currentIndex];
+      if (pulseOn){
+        const songTempo = currentSong?.tempo || currentSong?.bpm || currentSong?.speed || 120;
+        let pulseRate = (60 / parseInt(songTempo)).toString() + 's';
+        autoPlayBtn.classList.add('pulse');
+        autoPlayBtn.style.setProperty('--tempo-duration', pulseRate);
+        titlebar.classList.add('pulse');
+        titlebar.style.setProperty('--tempo-duration', pulseRate);
+      } else {
+        autoPlayBtn.classList.remove('pulse');
+        titlebar.classList.remove('pulse');
+      }
     }
     function scrollEnd (atTop = false){
       const contentWrapper = document.getElementById('contentWrapper');
@@ -398,7 +394,6 @@ function updateSongInfo(song) {
     const key = song.key || song.songkey || song.chord_key || '';
     const tempo = song.tempo || song.bpm || song.speed || '';
     const duration = song.duration || song.length || song.time || '';
-    console.log(playlist.indexOf(song) < playlist.length);
     const nextSongIndex = playlist.indexOf(song) + 1;
     const nextTitle = (nextSongIndex < playlist.length) ?
         playlist[nextSongIndex].title : "";
@@ -430,7 +425,7 @@ function updatePlaylistHighlight() {
 }
 
 function scrollToSection(direction) {
-    toggleMobileRightBar(true);
+    toggleMobilecontrolBar(true);
     const contentWrapper = document.getElementById('contentWrapper');
     const sections = contentWrapper.querySelectorAll('.lyrics-section');
 
@@ -461,6 +456,25 @@ function scrollToSection(direction) {
                 break;
             }
         }
+    }
+}
+
+window.addEventListener('resize', () => handleResize());
+function handleResize(hide) {
+  let isMobile = window.innerWidth <= 768 || /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  const controlBarStyle = document.getElementById('controlBar').style;
+  const overlayStyle = document.getElementById('mobileOverlay').style;
+  const titlebarIconStyle = document.getElementById('titlebarIcon').style;
+  const playlistDropdownStyle = document.getElementById('playlistDropdown').style;
+  if (isMobile || hide) {
+        titlebarIconStyle.display = 'block';
+        controlBarStyle.display = 'none';
+     } else {
+        titlebarIconStyle.display = 'none';
+        playlistDropdownStyle.display = 'none';
+        controlBarStyle.display = 'flex';
+        overlayStyle.display = 'none';
+        playlistDropdownStyle.display = 'none';
     }
 }
 
@@ -499,35 +513,31 @@ document.addEventListener('keydown', (e) => {
 });
 
 // Make functions globally available
-window.togglePlaylistDropdown = togglePlaylistDropdown;
+// window.hidePlaylist = hidePlaylist;
 window.loadSong = loadSong;
 window.scrollToSection = scrollToSection;
 /* window.toggleScroll = toggleScroll;*/
 window.toggleMode = toggleMode;
 window.handleAutoPlay = handleAutoPlay;
 window.currentIndex = currentIndex;
-window.toggleMobileRightBar = toggleMobileRightBar;
-window.closeMobileRightBar = toggleMobileRightBar;
+window.toggleMobilecontrolBar = toggleMobilecontrolBar;
+window.closeMobilecontrolBar = toggleMobilecontrolBar;
 
-function toggleMobileRightBar(close = false) {
-    const rightBar = document.getElementById('rightBar');
+function toggleMobilecontrolBar(close = false) {
+    const controlBar = document.getElementById('controlBar');
     const overlay = document.getElementById('mobileOverlay');
 
-    if (rightBar.classList.contains('mobile-open') || close) {
-      rightBar.classList.remove('mobile-open');
-      overlay.classList.remove('mobile-show');    
-      if (isMobile() && playlist.length > 0) {
-        mobileTab.classList.remove('mobile-hide');
-      }
+    if (controlBar.classList.contains('mobile-open') || close) {
+      controlBar.classList.remove('mobile-open');
+      overlay.classList.remove('mobile-show');
    } else {
-      rightBar.classList.add('mobile-open');
+      controlBar.classList.add('mobile-open');
       overlay.classList.add('mobile-show');
-      mobileTab.classList.add('mobile-hide');
     }
 }
+
 function handleDragValue(delta) {
   const lyricsPanelStyle = document.getElementById('lyricsPanel').style;
-  console.log(dragTarget);
   switch (dragTarget) {
     case 'fontSizeControl':
       currentFontSize += delta;
@@ -544,7 +554,7 @@ function handleDragValue(delta) {
   }
 }
 
-document.querySelectorAll('.drag-control')
+document.querySelectorAll('.draggable')
   .forEach(dragButton => {
     dragButton.addEventListener('mouseover', () => {
       dragButton.style.cursor = 'ns-resize';
@@ -581,95 +591,6 @@ document.addEventListener('mouseup', () => {
   }
 });
 
-function setupDragControls() {
-    const lyricsPanel = document.getElementById('lyricsPanel');
-    let isPinching = false;
-    let gestureStart = [];
-    let swipeStartX = null;
-
-    lyricsPanel.addEventListener('touchstart', (e) => {
-        if (e.touches.length === 2) {
-            // Begin pinch gesture
-            isPinching = true;
-            gestureStart = [{
-                x: e.touches[0].clientX,
-                y: e.touches[0].clientY
-            }, {
-                x: e.touches[1].clientX,
-                y: e.touches[1].clientY
-            }];
-            e.preventDefault();
-        } else if (e.touches.length === 1 && !isPinching) {
-            // Begin swipe
-            swipeStartX = e.touches[0].clientX;
-        }
-    }, {
-        passive: false
-    });
-
-    lyricsPanel.addEventListener('touchmove', (e) => {
-        if (isPinching && e.touches.length === 2 && gestureStart.length === 2) {
-            const current = [{
-                x: e.touches[0].clientX,
-                y: e.touches[0].clientY
-            }, {
-                x: e.touches[1].clientX,
-                y: e.touches[1].clientY
-            }];
-
-            const startDx = Math.abs(gestureStart[0].x - gestureStart[1].x);
-            const startDy = Math.abs(gestureStart[0].y - gestureStart[1].y);
-            const currentDx = Math.abs(current[0].x - current[1].x);
-            const currentDy = Math.abs(current[0].y - current[1].y);
-
-            const deltaX = currentDx - startDx;
-            const deltaY = currentDy - startDy;
-
-            // Update font size
-            const fontSizeSensitivity = 0.1;
-            currentFontSize = Math.max(12, Math.min(32, currentFontSize + deltaX * fontSizeSensitivity));
-            lyricsPanel.style.fontSize = currentFontSize + 'px';
-
-            // Update line height
-            const lineHeightSensitivity = 0.002;
-            currentLineHeight = Math.max(1.0, Math.min(2.5, currentLineHeight + deltaY * lineHeightSensitivity));
-            lyricsPanel.style.lineHeight = currentLineHeight;
-
-            gestureStart = current;
-            e.preventDefault();
-        }
-    }, {
-        passive: false
-    });
-
-    lyricsPanel.addEventListener('touchend', (e) => {
-        if (isPinching) {
-            // End pinch gesture — suppress swipe
-            if (e.touches.length < 2) {
-                isPinching = false;
-                gestureStart = [];
-                swipeStartX = null; // prevent swipe from firing
-            }
-            return; // Skip swipe detection
-        }
-
-        // Swipe detection only if not pinching and it was a one-finger touch
-        if (swipeStartX !== null && e.changedTouches.length === 1) {
-            const endX = e.changedTouches[0].clientX;
-            const dx = endX - swipeStartX;
-            const threshold = 30;
-
-            if (dx > threshold) {
-                sendMessage("Swipe Right");
-            } else if (dx < -threshold) {
-                sendMessage("Swipe Left");
-            }
-        }
-        // Reset swipe start
-        swipeStartX = null;
-    });
-}
-
 function sendMessage(msg) {
     console.log("Gesture:", msg);
 }
@@ -693,69 +614,159 @@ document.addEventListener('touchend', function(e) {
     lastTouch = now;
 }, false);
 
-function hideControls() {
-    if (isMobile()) {
-        const mobileControl = document.getElementById('playlistDropdown');
-        mobileControl.classList.remove('show');
+function makeResizablePanel() {
+  const resizer = document.getElementById('resizer');
+  const controlBar = document.getElementById('controlBar');
+  const mainContent = document.getElementById('mainContent');
+
+  let isDragging = false;
+
+  resizer.addEventListener('mousedown', function (e) {
+    isDragging = true;
+    document.body.style.cursor = 'ew-resize';
+    document.body.style.userSelect = 'none';
+  });
+
+  document.addEventListener('mousemove', function (e) {
+    if (!isDragging) return;
+    const mainRect = mainContent.getBoundingClientRect();
+    const offset = mainRect.right - e.clientX;
+    const newWidth = Math.min(Math.max(offset, 180), 600); // clamp to min/max
+    controlBar.style.width = newWidth + 'px';
+    console.log(newWidth, controlBar.style.width);
+    
+  });
+
+  document.addEventListener('mouseup', function () {
+    if (isDragging) {
+      isDragging = false;
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
     }
+  });
 }
 
-function setupSwipeSupport() {
+function setupClickAndSwipeSupport() {
+  let touchMoved = false;
+  let startX = 0, startY = 0;
+  let lastTapTime = 0;
+  const doubleTapDelay = 300;
+
+  // Attach event listeners on .clickable elements
+  document.querySelectorAll('.clickable').forEach(el => {
     if ('ontouchstart' in window || navigator.maxTouchPoints > 0) {
-        document.querySelectorAll('.drag-control')
-            .forEach(el => {
-                el.style.cssText += 'display: none !important;';
-            });
+      // Touch device: use touch events only
+      el.addEventListener('touchstart', onTouchStart, { passive: true });
+      el.addEventListener('touchmove', onTouchMove, { passive: true });
+      el.addEventListener('touchend', onTouchEnd);
+    } else {
+      // Mouse/desktop: use click events with timer for double click
+      el.addEventListener('click', onMouseClick);
+    }
+  });
+
+  // Touch handlers
+
+  function onTouchStart(e) {
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+    touchMoved = false;
+  }
+
+  function onTouchMove(e) {
+    const dx = Math.abs(e.touches[0].clientX - startX);
+    const dy = Math.abs(e.touches[0].clientY - startY);
+    if (dx > 5 || dy > 5) {
+      touchMoved = true;
+    }
+  }
+
+  function onTouchEnd(e) {
+    if (touchMoved) {
+      // Drag/swipe, don't trigger tap
+      touchMoved = false;
+      return;
     }
 
-    const contentWrapper = document.getElementById('contentWrapper');
-    let startX = 0;
-    let startY = 0;
-    let endX = 0;
-    let endY = 0;
+    const currentTime = Date.now();
+    const tapLength = currentTime - lastTapTime;
+    lastTapTime = currentTime;
+    const target = e.currentTarget.id;
 
-    contentWrapper.addEventListener('touchstart', function(e) {
-        startX = e.touches[0].clientX;
-        startY = e.touches[0].clientY;
-    }, {
-        passive: true
-    });
-
-    contentWrapper.addEventListener('touchend', function(e) {
-        endX = e.changedTouches[0].clientX;
-        endY = e.changedTouches[0].clientY;
-        handleSwipe();
-    }, {
-        passive: true
-    });
-
-    function handleSwipe() {
-        const deltaX = endX - startX;
-        const deltaY = endY - startY;
-        const minSwipeDistance = 50;
-
-        // Check if horizontal swipe is more significant than vertical
-        if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > minSwipeDistance) {
-            if (deltaX > 0) {
-                // Swipe right - previous song
-                if (currentIndex > 0) {
-                    loadSong(currentIndex - 1);
-                }
-            } else {
-                // Swipe left - next song
-                if (currentIndex < playlist.length - 1) {
-                    loadSong(currentIndex + 1);
-                }
-            }
-
-            // } else if (Math.abs(deltaY) > Math.abs(deltaX) && Math.abs(deltaY) > minSwipeDistance) {
-            //     if (deltaY < 0) {
-            //         // Swipe up - next section
-            //         scrollToSection(1);
-            //     } else {
-            //         // Swipe down - previous section
-            //         scrollToSection(-1);
-            //     }
+    if (tapLength > 0 && tapLength < doubleTapDelay) {
+      // Double tap detected
+      handleClick(target, true);
+    } else {
+      // Single tap, delay firing in case of double tap
+      setTimeout(() => {
+        // Only fire single tap if no double tap happened
+        if (Date.now() - lastTapTime >= doubleTapDelay) {
+          handleClick(target, false);
         }
+      }, doubleTapDelay);
     }
+  }
+
+  // Mouse handlers
+  let clickTimer = null;
+
+  function onMouseClick(e) {
+    const target = e.currentTarget.id;
+
+    if (clickTimer) {
+      clearTimeout(clickTimer);
+      clickTimer = null;
+      handleClick(target, true); // double click
+    } else {
+      clickTimer = setTimeout(() => {
+        handleClick(target, false); // single click
+        clickTimer = null;
+      }, doubleTapDelay);
+    }
+  }
+
+  // Swipe logic on #contentWrapper only
+
+  const contentWrapper = document.getElementById('contentWrapper');
+  let swipeStartX = 0, swipeStartY = 0;
+  let swipeEndX = 0, swipeEndY = 0;
+  if (contentWrapper) {
+    contentWrapper.addEventListener('touchstart', e => {
+      swipeStartX = e.touches[0].clientX;
+      swipeStartY = e.touches[0].clientY;
+    }, { passive: true });
+
+    contentWrapper.addEventListener('touchend', e => {
+      swipeEndX = e.changedTouches[0].clientX;
+      swipeEndY = e.changedTouches[0].clientY;
+      handleSwipe();
+    }, { passive: true });
+  }
+
+  function handleSwipe() {
+    const deltaX = swipeEndX - swipeStartX;
+    const deltaY = swipeEndY - swipeStartY;
+    const minSwipeDistance = 50;
+
+    if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > minSwipeDistance) {
+      if (deltaX > 0) {
+        if (currentIndex > 0) loadSong(currentIndex - 1);
+      } else {
+        if (currentIndex < playlist.length - 1) loadSong(currentIndex + 1);
+      }
+    }
+  }
+
+  // Your existing click handler logic
+
+  function handleClick(target, doubleClick) {
+    switch (target) {
+      case 'titlebar':
+        doubleClick ? toggleMobilecontrolBar() : showPLaylist();
+        break;
+      case 'contentWrapper':
+        doubleClick ? handleAutoPlay('start') : handleAutoPlay('cancel');
+        break;
+    }
+  }
 }
