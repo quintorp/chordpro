@@ -666,7 +666,6 @@ function setupClickAndSwipeSupport() {
   });
 
   // Touch handlers
-
   function onTouchStart(e) {
     startX = e.touches[0].clientX;
     startY = e.touches[0].clientY;
