@@ -32,18 +32,18 @@ Drag to rearrange list
   <div class="song-title-display" id="songTitleDisplay">PLAYLIST PLAYER</div>
   <div id="titlebarIcon"></div>
 </div>
-
+<div id="mobileOverlay" onclick="toggleMobilecontrolBar(true)"></div>
+  <div id="playlistDropdown"></div> 
+ 
   <div id="mainContent">
     <div id="contentWrapper" class='clickable'>
       <div id="lyricsPanel"></div>
       <label class="button pulse" for="fileInput" id="initImportBtn"></label>
     </div>
     
-  <!-- Mobile overlay for closing right bar -->
-  <div id="mobileOverlay" onclick="toggleMobilecontrolBar(true)"></div>
-
+   <div id="resizer"></div>
+    
   <div id="controlBar">
-    <div id="playlistDropdown"></div>
     <div id="sidebarClock" class='clock'>></div>
     <div class="button" onclick="handleAutoPlay()" id="autoPlayBtn"></div>
     <div id="songInfoBox"></div>
