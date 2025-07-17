@@ -13,133 +13,64 @@ body {
   flex-direction: column;
 }
 
-/* Full height app container */
-#app {
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-}
-
 /* Top bar across full width */
 #titlebar {
   background-color: #333;
   padding: 10px 20px;
   border-bottom: 2px solid #00DD00;
-  z-index: 50;
   font-size: 20px;
   font-weight: bold;
   color: #00DD00;
   text-align: center;
   cursor: pointer;
   flex-shrink: 0;
+  z-index: 50;
 }
 
 /* Horizontal content area below titlebar */
 #mainContent {
   display: flex;
-  /* height: 100%; */
-  width: 100%;
   flex: 1; /* This makes it expand to fill remaining vertical space */
   overflow: hidden;
 }
 
-#contentWrapper {
-  flex: 1;
-  overflow-y: auto;
-  background-color: #2a2a2a;
-  border-radius: 8px;
-  margin: 10px;
-}
-
-#resizer {
-  width: 4px;
-  cursor: ew-resize;
-  background-color: #00dd00;
-  margin: 10px 0;
-  flex-shrink: 0;   /* prevent shrinking */
-}
-#controlBar {
-  /* flex: 0 0 15%; */
-  min-width: 180px;
-  background-color: #333;
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  border-radius: 8px;
-  margin: 10px 10px 10px 0;
-  overflow-y: auto;
-}
-
-.icon {
+.nocursor {
   pointer-events: none;
 }
 .song-title-display {
   pointer-events: none;
 }
 
-#titlebarClock, #titlebarIcon {
-  position: absolute;
-  top: 12px;
-}
-
 #titlebarClock {
-  left: 12px;
-}
-
-#titlebarIcon {
-  right: 12px;
-}
-
-#lyricsPanel {
-  font-size: 20px;
-  line-height: 1.4;
-  letter-spacing: .3px;
-  white-space: pre-wrap;
-  font-family: system-ui, Arial, Helvetica, Roboto, Tahoma, "Segoe UI", Verdana, sans-serif;
-  min-height: 200px;
-  /* padding: 20px; */
-  position: relative;
-}
-
-/* Visual cues for song beginning and end - scroll with content */
-#lyricsPanel.song-loaded::before {
-  content: '';
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 3vh;
-  background: linear-gradient(to bottom, #00DD00, transparent);
-  pointer-events: none;
-  z-index: 1;
 }
 
-#lyricsPanel.song-loaded::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 3vh;
-  background: linear-gradient(to top, #00DD00, transparent);
-  pointer-events: none;
-  z-index: 1;
-}
-
-/* Force scrollbar to always be visible */
 #contentWrapper {
+  flex: 1;
+  background-color: #2a2a2a;
+  border-radius: 8px;
+  margin: 10px;
   user-select: none;
   cursor: grab;
   overflow: auto;
   overflow-y: scroll;
 }
+
+#customScrollbar {
+  position: absolute;
+  left: 10px;
+  width: 15px;
+  background-color: #00DD00;
+  border-radius: 5px;
+  pointer-events: none;
+}
+
 .contentWrapper:active {
   cursor: grabbing;
 }
 
 #contentWrapper::-webkit-scrollbar {
-  width: 8px;
+  display: none;
 }
 
 #contentWrapper::-webkit-scrollbar-track {
@@ -153,22 +84,81 @@ body {
 
 #contentWrapper::-webkit-scrollbar-thumb:hover {
   background: #00BB00;
+  position: relative;
+  height: 100%;
+  overflow: hidden;
+}
+
+#lyricsPanel {
+  font-size: 20px;
+  line-height: 1.4;
+  letter-spacing: .3px;
+  white-space: pre-wrap;
+  font-family: system-ui, Arial, Helvetica, Roboto, Tahoma, "Segoe UI", Verdana, sans-serif;
+  padding-left: 17px; /* reserve space for fake scrollbar */
+  position: relative;
+  z-index: 0;
+  height: 100%;
+  overflow-y: scroll;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE 10+ */
+}
+
+#lyricsPanel::-webkit-scrollbar {
+  display: none; /* Safari & Chrome */
 }
 
 .lyrics-section {
-  padding: 4px 15px 4px 15px;
+  padding: 4px 15px;
   margin-bottom: 2px;
   border-radius: 6px;
   position: relative;
   z-index: 3;
+  overflow: hidden; /* Ensure pseudo-elements don't spill */
 }
 
+/* First section: top gradient */
+.lyrics-section:first-of-type::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 5vh;
+  background: linear-gradient(to bottom, #00DD00, transparent);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Last section: bottom gradient */
+.lyrics-section:last-of-type::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 20vh;
+  background: linear-gradient(to top, #00DD00, transparent);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Background colors */
 .section-light {
   background-color: rgba(255, 255, 255, 0.08);
 }
 
+.section-light:first-child {
+  padding-top: 5vh;
+}
+
 .section-dark {
   background-color: rgba(0, 0, 0, 0.08);
+}
+
+.section-dark:last-child {
+  padding-bottom: 20vh;
 }
 
 .section-header {
@@ -199,8 +189,8 @@ body {
 
 /* Tempo-based pulsing for autoscroll button */
 .pulse {
-  animation-duration: var(pulse-duration, 1s);
   animation: pulse  1s infinite;
+  animation-duration: var(--pulse-duration, 1s);
 }
 
 /* Pulsing animation for armed buttons */
@@ -219,81 +209,43 @@ body {
   }
 }
 
-.button {
-  background-color: #444;
-  padding: 15px 16px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 18px;
-  font-weight: bold;
-  transition: all 0.3s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  width: 100%;
-  /* height: 50%; */
-  box-sizing: border-box;
-}
-#autoPlayBtn, #initImportBtn {
-  width: auto;
-  height: 100px;
-}
-
-.button:hover {
-  background-color: #00BB00;
-}
-
-#initImportBtn {
-  width: fit-content;
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
- }
-
-.control-pair {
-  display: flex;
-  gap: 5px;
-}
-
-.button:active {
-  background-color: #666;
-}
-
-.button.armed {
-  border-color: #00DD00;
-}
-
-.button i {
-  font-size: 20px;
-  font-weight: bold;
-}
-
-#playlistTitleBtn:hover {
-  background-color: #00DD00;
-  color: #2a2a2a;
-}
-.bottom-controls {
-  margin-top: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-/* FIXED: Playlist dropdown styling */
 #playlistDropdown {
   background-color: #444;
-  max-height: 100vh;
+  border-radius: 6px;
+  height: 95vh;
   overflow-y: auto;
-  display: none;
+  display: block;
   width: 100%;
   z-index: 99999;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
 }
 
-#playlistDropdown.show {
-  display: block !important;
+.playlist-item {
+  padding: 10px;
+  cursor: pointer;
+  border-bottom: 1px solid #555;
+  transition: background-color 0.2s ease;
+}
+
+.playlist-item:first-child {
+  color: #00DD00;
+  text-align: center;
+  font-weight: bold;
+  text-transform: uppercase;
+  font-size: 19px;
+}
+
+.playlist-item:hover {
+  background-color: #555;
+}
+
+.playlist-item.active {
+  background-color: #666;
+  font-weight: bold;
 }
 
 /* Light mode gradients */
@@ -322,37 +274,32 @@ body.light-mode #contentWrapper::-webkit-scrollbar-thumb:hover {
   background: #006600;
 }
 
-.playlist-item {
-  padding: 10px;
-  cursor: pointer;
-  border-bottom: 1px solid #555;
-  transition: background-color 0.2s ease;
-}
-
-.playlist-item:hover {
-  background-color: #555;
-}
-
-.playlist-item.active {
-  background-color: #666;
-  font-weight: bold;
-}
-
-#sidebarClock {
-  padding: 10px;
-  border-radius: 6px;
-  text-align: center;
-  font-size: 28px;
-  font-weight: bold;
-  color: #00DD00;
-}
-
-#songInfoBox {
-  background-color: #444;
-  padding: 15px;
-  border-radius: 6px;
+#infoPanel {
+  border-radius: 0 0 12px 12px;
   font-size: 16px;
+  font-weight: bold;
+  text-align: center;
   line-height: 1.4;
+  position: absolute;
+  top: 0;
+  right: 10px;
+  width: 25vw;
+  min-width: 120px;
+  background-color: rgba(0, 0, 0, 0.5);
+  padding: 10px;
+  padding-top: 60px;
+  transform: translateY(-100%);
+  opacity: 0;
+  transition: transform 0.3s ease, opacity 0.3s ease;
+  z-index: 45;
+  cursor: pointer;
+  pointer-events: none; /* prevent interaction when hidden */
+}
+
+#infoPanel.visible {
+  transform: translateY(0);
+  opacity: 1;
+  pointer-events: auto;
 }
 
 .song-metadata {
@@ -365,7 +312,7 @@ body.light-mode #contentWrapper::-webkit-scrollbar-thumb:hover {
   text-align: center
   font-size: 16px;
   color: #aaa;
-  //margin-bottom: 7px;
+  /* margin-bottom: 7px; */
   font-weight: 700;
 }
 
@@ -384,22 +331,6 @@ body.light-mode #contentWrapper::-webkit-scrollbar-thumb:hover {
 
 .mobile-hide {
   display: none;
-}
-
-/* Overlay for closing the sidebar */
-#mobileOverlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.5);
-  z-index: 999;
-  display: none;
-}
-
-#mobileOverlay.mobile-show {
-  display: block;
 }
 
 /* Light mode styles */
@@ -504,7 +435,6 @@ body.light-mode .secondary-button:hover {
   background-color: #c0c0c0 !important;
 }
 
-
 body.light-mode #playlistDropdown {
   background-color: #d0d0d0;
 }
@@ -535,22 +465,13 @@ body.light-mode .song-metadata {
   color: #555;
 }
 
-body.light-mode #mobileTab {
-  background-color: #e0e0e0;
-  color: #008800;
-}
-
-body.light-mode #mobileTab:hover {
-  background-color: #d0d0d0;
-}
-
 /* Mobile responsive design */
 @media (max-width: 768px) {
   body {
     flex-direction: column;
   }
   
-  #lyricsPanel {
+  #lyricsPanel, #clock {
     font-family: system-ui, "Helvetica Neue", Arial, sans-serif;
     font-stretch: condensed;
   }
@@ -562,68 +483,10 @@ body.light-mode #mobileTab:hover {
   #contentWrapper {
     flex: 1;
   }
-  
-  #rightBar {
-    position: fixed;
-    top: 50%;
-    transform: translateY(-50%);
-    right: -100%;
-    width: 90%;
-    max-width: 300px;
-    height: 80vh;
-    z-index: 1000;
-    margin: 0;
-    border-radius: 12px 0 0 12px;
-    transition: right 0.3s ease;
-    overflow-y: auto;
-  }
-  
-  #rightBar.mobile-open {
-    right: 0;
-    box-shadow: -5px 0 15px rgba(0, 0, 0, 0.5);
-  }
-  
-  #playlistTitleBtn {
-    border-radius: 6px;
-  }
-  
-  .control-button {
-    //font-size: 16px;
-    padding: 12px 14px;
-  }
-  
-  #clock {
-    font-size: 24px;
-    padding: 12px;
-  }
-  
-  #songInfoBox {
-    padding: 12px;
-  }
-  
-  .song-title-display {
-    font-size: 18px;
-  }
-  
-  #playlistDropdown {
-    /* width: calc(90% - 30px);
-    max-width: 270px;
-    bottom: 100%; */
-    top: auto;
-  }
 }
 
 /* Tablet responsive design */
 @media (min-width: 769px) and (max-width: 1024px) {
-  #rightBar {
-    width: 22%;
-    min-width: 220px;
-  }
-  
-  .control-button {
-    //font-size: 16px;
-    padding: 12px 14px;
-  }
   
   #clock {
     font-size: 24px;
