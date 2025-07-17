@@ -1,22 +1,15 @@
 <!DOCTYPE html>
 <!--
-Two finger gesture: change font size, line spacing.
 Interface color picker
-Mobile
-  lose control tab
-  make title clickable for controls
-  button on left autoplay
-  button on right next song
 Store metadata - font size, line spacing, color - locally
 Drag to rearrange list
 -->
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-
   <title>Playlist Player</title>
+
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="ChordPro Viewer" />
@@ -26,46 +19,22 @@ Drag to rearrange list
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 </head>
 <body>
-
+  <div id="infoPanel" onclick='toggleInfoPanel()'></div>
   <div id="titlebar" class='clickable' tabindex="0">
-  <div id="titlebarClock" class='clock'></div>
-  <div class="song-title-display" id="songTitleDisplay">PLAYLIST PLAYER</div>
-  <div id="titlebarIcon"></div>
-</div>
-<div id="mobileOverlay" onclick="toggleMobilecontrolBar(true)"></div>
-  <div id="playlistDropdown"></div> 
- 
-  <div id="mainContent">
-    <div id="contentWrapper" class='clickable'>
-      <div id="lyricsPanel"></div>
-      <label class="button pulse" for="fileInput" id="initImportBtn"></label>
-    </div>
-    
-   <div id="resizer"></div>
-    
-  <div id="controlBar">
-    <div id="sidebarClock" class='clock'>></div>
-    <div class="button" onclick="handleAutoPlay()" id="autoPlayBtn"></div>
-    <div id="songInfoBox"></div>
-    
-    <div class="bottom-controls">
-      <div class="control-pair">
-        <div class="button draggable" id="fontSizeControl" data-type="fontSize">
-          <div class="icon" id="fontSizeIcon"></div>
-        </div>
-        <div class="button draggable" id="lineHeightControl" data-type="lineHeight">
-          <div class="icon" id="lineHeightIcon"></div>
-        </div>
-      </div>
-      <div class="control-pair">
-        <div class="button" onclick="toggleMode()" id="modeBtn">
-          <div class="icon" id="modeBtnIcon"></div>
-          </div>
-        <label class="button" for="fileInput" id="fileImportBtn"></label>
-      </div>
-    </div>
+    <div id="titlebarClock" class='clock nocursor'></div>
+    <div id="titlebarTitle" class='nocursor'>Playlist Player</div>
+    <div id="titlebarIcon" class='nocursor'></div>
   </div>
+  
+  <div id="playlistDropdown"></div> 
 
+  <div id="contentWrapper" class='clickable'>
+    <div id="lyricsPanel">
+    </div>
+    <div id="customScrollbar"></div>
+  </div>
+  
+  
   <input type="file" id="fileInput" accept=".csv">
   <script type="module" src="./main.js"></script>
 </body>
