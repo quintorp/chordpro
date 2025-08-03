@@ -1,13 +1,12 @@
 // ChordPro Viewer JavaScript
-import {
-    icons
-} from './icons.js';
 
 let currentIndex = 0;
 let playlist = [];
+let autoDelayDur = 12;
+let autoPlayDelay = null;
 let scrollInterval = null;
-let autoPlayOn = false;
-let autoPlayPause = null;
+let scrollStep = 0;
+let scrollPosFloat = 0;
 let currentFontSize = 18;
 let currentLineHeight = 1.6;
 let playlistName = 'Playlist';
@@ -15,30 +14,41 @@ let playlistName = 'Playlist';
 // Initialize the app
 document.addEventListener('DOMContentLoaded', function() {
   console.log('App initialized');
-  initializeIcons();
   initializeClock();
   setupFileInput();
-  handleResize (true);
-  setupClickAndSwipeSupport();
-  makeResizablePanel();
-
+  setupInteractionHandlers();
+  populatePlaylistDropdown(true);
+  initializeScrollbar();
+  
+  // Make functions globally available
+  window.loadSong = loadSong;
+  window.toggleMode = toggleMode;
+  window.startAutoScroll = startAutoScroll;
+  window.currentIndex = currentIndex;
+  window.updateScrollbar = updateScrollbar;
+  window.hideMe = hideMe;
 });
 
-function initializeIcons() {
-    document.getElementById('initImportBtn')
-        .innerHTML = 'Load a song file (CSV)' + icons.fileImport;
-    document.getElementById('autoPlayBtn')
-        .innerHTML = icons.autoPlay;
-    document.getElementById('fontSizeIcon')
-        .innerHTML = icons.textSize;
-    document.getElementById('lineHeightIcon')
-        .innerHTML = icons.lineHeight;
-    document.getElementById('modeBtnIcon')
-        .innerHTML = icons.brightness;
-    document.getElementById('fileImportBtn')
-        .innerHTML = icons.fileImport;
-    document.getElementById('titlebarIcon')
-        .innerHTML = icons.autoScroll;
+function updateScrollbar() {
+  const container = document.getElementById('lyricsPanel');
+  const scrollbar = document.getElementById('customScrollbar');
+  const songInfoBox = document.getElementById('songInfoBox');
+
+  const contentHeight = container.scrollHeight;
+  const visibleHeight = container.clientHeight;
+  const scrollTop = container.scrollTop;
+
+  const scrollbarHeight = (visibleHeight / contentHeight) * visibleHeight;
+  const scrollbarTop = 55 + (scrollTop / contentHeight) * visibleHeight;
+
+  scrollbar.style.height = `${scrollbarHeight}px`;
+  scrollbar.style.top = `${scrollbarTop}px`;
+}
+
+function initializeScrollbar() {
+  const container = document.getElementById('lyricsPanel');
+  const scrollbar = document.getElementById('customScrollbar');
+  container.addEventListener('scroll', updateScrollbar);
 }
 
 function initializeClock() {
@@ -69,13 +79,6 @@ function setupFileInput() {
 }
 
 function handleFileSelect(event) {
-    const initImportBtn = document.getElementById("initImportBtn");
-    const controlBar = document.getElementById("controlBar");
-    if (window.getComputedStyle(initImportBtn)
-        .display == 'flex') {
-        controlBar.style.display = 'flex';
-        initImportBtn.style.display = 'none';
-    }
     const file = event.target.files[0];
     console.log('File selected:', file);
 
@@ -89,11 +92,6 @@ function handleFileSelect(event) {
         alert('Please select a CSV file');
         return;
     }
-
-    // Extract playlist name from filename
-    playlistName = file.name.replace('.csv', '')
-        .replace(/[-_]/g, ' ');
-
     const reader = new FileReader();
     reader.onload = function(e) {
         const csv = e.target.result;
@@ -111,9 +109,6 @@ function handleFileSelect(event) {
 
 function parsePlaylist(csvData) {
     console.log('Parsing CSV data...');
-
-    handleAutoPlay('cancel');
-    toggleMobilecontrolBar(true);
 
     if (typeof Papa === 'undefined') {
         console.error('PapaParse library not loaded');
@@ -163,24 +158,23 @@ function parsePlaylist(csvData) {
     });
 }
 
-function populatePlaylistDropdown() {
+function populatePlaylistDropdown(addLoadFileButton = false) {
+  if (addLoadFileButton){
+    makePlaylistItem('LOAD PLAYLIST', -1);
+    return;
+  }
+  playlist.forEach((song, index) => {
+    const title = song.title || song.name || song.song || song.songname || `Song ${index}`;
+    makePlaylistItem (title, index);
+  });
+  function makePlaylistItem (title, index){
     const dropdown = document.getElementById('playlistDropdown');
-    if (!dropdown) {
-        console.error('Playlist dropdown element not found');
-        return;
-    }
-
-    dropdown.innerHTML = '';
-
-    playlist.forEach((song, index) => {
-        const item = document.createElement('div');
-        item.className = 'playlist-item';
-        // Try different possible column names for title
-        const title = song.title || song.name || song.song || song.songname || `Song ${index + 1}`;
-        item.textContent = title;
-        item.onclick = () => loadSong(index);
-        dropdown.appendChild(item);
-    });
+    const item = document.createElement('div');
+    item.textContent = title;
+    item.className = 'playlist-item';
+    item.onclick = () => loadSong(index);
+    dropdown.appendChild(item, index);
+  }
 }
 
 function showPLaylist() {
@@ -188,6 +182,12 @@ function showPLaylist() {
 }
 
 function loadSong(index) {
+  console.log(index);
+  cancelAutoScroll();
+  if (index === -1){
+    document.getElementById('fileInput').click();
+    return;
+  }  
     document.getElementById('playlistDropdown').style.display = 'none';
     if (index < 0 || index >= playlist.length) {
         console.log('Invalid song index:', index);
@@ -205,131 +205,75 @@ function loadSong(index) {
     // Update lyrics panel
     lyricsPanel.innerHTML = formatChordProSong(song);
 
-    // Reset scroll position to top
-    const contentWrapper = document.getElementById('contentWrapper');
-    contentWrapper.scrollTop = 0;
+    // lyricsPanel.scrollTo({ top: 0, behavior: 'smooth' });
+    lyricsPanel.scrollTop = 0;
+
 
     document.getElementById('playlistDropdown')
         .classList.remove('show');
-    toggleMobilecontrolBar(true);
+    updateScrollbar();
     updateSongInfo(song);
     updatePlaylistHighlight();
-    document.getElementById('songTitleDisplay').innerHtml = autoPlayOn;
-    autoPlayOn ? handleAutoPlay('songTop') : null;
 }
 
-function handleAutoPlay(status = 'toggle') {
-    const autoPlayBtn = document.getElementById('autoPlayBtn');
-    const titlebar = document.getElementById('titlebar');
-    const titlebarIcon = document.getElementById('titlebarIcon');
-    const contentWrapper = document.getElementById('contentWrapper');
-// document.getElementById('songTitleDisplay').textContent = 'handleAutoPlay: '+ status;
-    console.log ('handleAutoPlay: ', status);
-
-    switch (status) {
-      case 'start':
-        autoPlayOn = false;
-        case 'toggle':
-            autoPlayOn = !autoPlayOn;
-            clearTimeout(autoPlayPause);
-            clearInterval(scrollInterval);
-            toggleMobilecontrolBar(true);
-
-            if ((!autoPlayOn) || (scrollEnd() && lastSong())){
-                handleAutoPlay('cancel');
-                return;
-            }
-            autoPlayBtn.classList.add('armed');
-            if (scrollEnd()) {
-              loadSong(currentIndex + 1);
-            } else if (scrollEnd(true)) {
-              handleAutoPlay ('songTop');
-            } else {
-              handleAutoPlay ('scroll');
-            }
-		        break;
-
-        case 'songTop':
-            clearTimeout(autoPlayPause);
-            clearInterval(scrollInterval);
-            autoPlayBtn.innerHTML = icons.autoScroll;
-            titlebarIcon.innerHTML = icons.autoScroll;
-            pulseControls (true, true);
-            autoPlayPause = setTimeout(() => {
-                handleAutoPlay('scroll');
-            }, 10000);
-            break;
-
-        case 'scroll':
-            pulseControls (false, null);
-            scrollInterval = setInterval(() => {
-                contentWrapper.scrollTop += 1;
-                if (scrollEnd()) {
-                    handleAutoPlay('songEnd');
-                }
-            }, 100);
-            break;
-
-        case 'songEnd':
-            clearInterval(scrollInterval);
-            autoPlayBtn.innerHTML = icons.autoPlay;
-            titlebarIcon.innerHTML = icons.autoPlay;
-            pulseControls (true, false);
-            if (lastSong()) {
-                handleAutoPlay('cancel');
-                return;
-            }
-
-            autoPlayPause = setTimeout(() => {
-                loadSong(currentIndex + 1);
-            }, 10000);
-            break;
-
-        case 'cancel':
-            autoPlayOn = false;
-            clearTimeout(autoPlayPause);
-            clearInterval(scrollInterval);
-            autoPlayBtn.classList.remove('armed');
-            autoPlayBtn.innerHTML = icons.autoScroll;
-            titlebarIcon.innerHTML = icons.autoScroll;
-
-            pulseControls (false, null);
-            break;
-
-        default:
-            // Log unhandled keys for debugging
-            console.log('Unhandled status', status);
-            break;
-    }
-    function pulseControls (pulseOn = true, tempo){
-      const autoPlayBtn = document.getElementById('autoPlayBtn');
-      const titlebar = document.getElementById('titlebar');
-      const currentSong = playlist[currentIndex];
-      if (pulseOn){
-        const songTempo = currentSong?.tempo || currentSong?.bpm || currentSong?.speed || 120;
-        let pulseRate = (60 / parseInt(songTempo)).toString() + 's';
-        autoPlayBtn.classList.add('pulse');
-        autoPlayBtn.style.setProperty('--tempo-duration', pulseRate);
-        titlebar.classList.add('pulse');
-        titlebar.style.setProperty('--tempo-duration', pulseRate);
-      } else {
-        autoPlayBtn.classList.remove('pulse');
-        titlebar.classList.remove('pulse');
+function startAutoScroll(topDelayEnded = false) {
+  console.log('startAutoScroll: ', topDelayEnded);
+  cancelAutoScroll();
+  const lyricsPanel = document.getElementById('lyricsPanel');
+  
+  // Start scrolling immediately if delay already ended or manually triggered
+  if (topDelayEnded || lyricsPanel.scrollTop > 10) {
+    songInfoBox.style.display = 'none';
+    scrollPosFloat = lyricsPanel.scrollTop;
+    scrollStep = calculateScrollStep();
+    scrollInterval = setInterval(() => {
+      scrollPosFloat += scrollStep;
+      lyricsPanel.scrollTop = Math.round(scrollPosFloat);
+      if (lyricsPanel.scrollTop + lyricsPanel.clientHeight >= lyricsPanel.scrollHeight) {
+        songInfoBox.style.display = 'block';
+        cancelAutoScroll();
       }
-    }
-    function scrollEnd (atTop = false){
-      const contentWrapper = document.getElementById('contentWrapper');
-      if (atTop) {
-        return contentWrapper.scrollTop <= 10;
-      } else {
-        return contentWrapper.scrollTop >= (contentWrapper.scrollHeight - contentWrapper.clientHeight - 5);
-      }
-    }
-    function lastSong(){
-      return currentIndex >= playlist.length;
-    }
+    }, 100);
+    return;
+  }
+  // SONG AT BEGINNING - show tempo pulse and delay
+  const titlebar = document.getElementById('titlebar');
+  const currentSong = playlist[currentIndex];
+  const songTempo = currentSong?.tempo || currentSong?.bpm || currentSong?.speed || 120;
+  let pulseRate = (60 / parseInt(songTempo)).toString() + 's';
+  titlebar.classList.add('pulse');
+  titlebar.style.setProperty('--pulse-duration', pulseRate);
+  
+  autoPlayDelay = setTimeout(() => {
+      startAutoScroll(true);
+    }, autoDelayDur * 1000);
 }
 
+function calculateScrollStep() {
+  const container = document.getElementById('contentWrapper');
+  const content = document.getElementById('lyricsPanel');
+  if (!container || !content) return 0;
+
+  const scrollDistance = content.scrollHeight - container.clientHeight;
+
+  const totalDuration = window.currentSongDuration || 160;
+  const remainingDuration = Math.max(0, totalDuration - autoDelayDur);
+
+  const intervals = remainingDuration * 10; // intervals of 100ms
+
+  const speed = intervals > 0 ? scrollDistance / intervals : 0;
+  console.log(speed);
+  return speed;
+}
+
+function cancelAutoScroll() {
+  clearTimeout(autoPlayDelay);
+  clearInterval(scrollInterval);
+  autoPlayDelay = null;
+  scrollInterval = null;
+  titlebar.classList.remove('pulse');
+  songInfoBox.style.display = 'block';
+}
 // Format ChordPro song with alternating sections and section labels
 function formatChordProSong(song) {
     // Try different possible column names for lyrics
@@ -363,7 +307,7 @@ function formatChordProSong(song) {
             label = label.replace(/^C:\s*/, '');
             sectionContent = sectionContent.replace(/^\{[^}]+\}\s*/, '');
             sectionContent = `<div class="section-header">${label}</div>${sectionContent}`;
-        };
+        }
 
         sectionContent = sectionContent.replace(/\n/g, '<br>');
         result += `<div class="lyrics-section ${sectionClass}">${sectionContent}</div>`;
@@ -384,13 +328,13 @@ function formatDuration(seconds) {
 }
 
 function updateSongInfo(song) {
-    const infoBox = document.getElementById('songInfoBox');
-    const titleDisplay = document.getElementById('songTitleDisplay');
+    const titleDisplay = document.getElementById('titlebarTitle');
 
     // Try different possible column names
     const title = song.title || song.name || song.song || song.songname || 'Unknown Title';
     const capo = song.capo || song.capo_fret || '';
     const chords = song.chords || song.chord_progression || song.chord_sequence || '';
+  console.log(chords);
     const key = song.key || song.songkey || song.chord_key || '';
     const tempo = song.tempo || song.bpm || song.speed || '';
     const duration = song.duration || song.length || song.time || '';
@@ -411,100 +355,44 @@ function updateSongInfo(song) {
         if (formattedDuration) metadataHtml += `Duration: ${formattedDuration}`;
     }
 
-    infoBox.innerHTML = `
+    songInfoBox.innerHTML = `
         <div class="song-metadata">${metadataHtml}</div>
         <div class="song-next-info">${currentIndex + 1} of ${playlist.length}</div>
-        <div class="song-next-info">Next: ${nextTitle}</div>`;
+        <div class="song-next-info" onclick="loadSong(currentIndex + 1)">Next: ${nextTitle}</div>`;
+    songInfoBox.classList.add('visible');
+      document.querySelector(".song-next-info").addEventListener("click", () => {
+      loadSong(currentIndex + 1);
+    });
 }
+
 
 function updatePlaylistHighlight() {
     const items = document.querySelectorAll('.playlist-item');
     items.forEach((item, index) => {
-        item.classList.toggle('active', index === currentIndex);
+        item.classList.toggle('active', (index - 1) === currentIndex);
     });
-}
-
-function scrollToSection(direction) {
-    toggleMobilecontrolBar(true);
-    const contentWrapper = document.getElementById('contentWrapper');
-    const sections = contentWrapper.querySelectorAll('.lyrics-section');
-
-    if (sections.length === 0) {
-        // Fallback to old behavior if no sections
-        contentWrapper.scrollTop += direction * ontentWrapper.clientHeight * 0.8;
-        return;
-    }
-
-    const currentScroll = contentWrapper.scrollTop;
-
-    if (direction === 1) {
-        // Find next section that's not fully visible
-        for (let section of sections) {
-            const sectionTop = section.offsetTop;
-            if (sectionTop > currentScroll + 10) {
-                contentWrapper.scrollTop = sectionTop;
-                break;
-            }
-        }
-    } else {
-        // Find previous section
-        for (let i = sections.length - 1; i >= 0; i--) {
-            const section = sections[i];
-            const sectionTop = section.offsetTop;
-            if (sectionTop < currentScroll - 10) {
-                contentWrapper.scrollTop = sectionTop;
-                break;
-            }
-        }
-    }
-}
-
-window.addEventListener('resize', () => handleResize());
-function handleResize(hide) {
-  let isMobile = window.innerWidth <= 768 || /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-  const controlBarStyle = document.getElementById('controlBar').style;
-  const overlayStyle = document.getElementById('mobileOverlay').style;
-  const titlebarIconStyle = document.getElementById('titlebarIcon').style;
-  const playlistDropdownStyle = document.getElementById('playlistDropdown').style;
-  if (isMobile || hide) {
-        titlebarIconStyle.display = 'block';
-        controlBarStyle.display = 'none';
-     } else {
-        titlebarIconStyle.display = 'none';
-        playlistDropdownStyle.display = 'none';
-        controlBarStyle.display = 'flex';
-        overlayStyle.display = 'none';
-        playlistDropdownStyle.display = 'none';
-    }
 }
 
 function toggleMode() {
     document.body.classList.toggle('light-mode');
 }
 
+function hideMe(el) {
+  el.classList.remove('visible');
+}
+
 // Keyboard bindings for foot controller
 document.addEventListener('keydown', (e) => {
     switch (e.key) {
         case '3':
-            // Scroll to top
-            document.getElementById('contentWrapper')
-                .scrollTop = 0;
             break;
         case '-':
-            // Toggle autoplay
-            handleAutoPlay('toggle');
             break;
         case '*':
-            // Toggle autoscroll
-            // toggleScroll();
             break;
         case '/':
-            // Next lyrics section
-            scrollToSection(1);
             break;
         case '=':
-            // Next song
-            loadSong(currentIndex + 1);
             break;
         default:
             // Log unhandled keys for debugging
@@ -512,260 +400,156 @@ document.addEventListener('keydown', (e) => {
     }
 });
 
-// Make functions globally available
-// window.hidePlaylist = hidePlaylist;
-window.loadSong = loadSong;
-window.scrollToSection = scrollToSection;
-/* window.toggleScroll = toggleScroll;*/
-window.toggleMode = toggleMode;
-window.handleAutoPlay = handleAutoPlay;
-window.currentIndex = currentIndex;
-window.toggleMobilecontrolBar = toggleMobilecontrolBar;
-window.closeMobilecontrolBar = toggleMobilecontrolBar;
+function setupInteractionHandlers() {
+  const isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 
-function toggleMobilecontrolBar(close = false) {
-    const controlBar = document.getElementById('controlBar');
-    const overlay = document.getElementById('mobileOverlay');
-
-    if (controlBar.classList.contains('mobile-open') || close) {
-      controlBar.classList.remove('mobile-open');
-      overlay.classList.remove('mobile-show');
-   } else {
-      controlBar.classList.add('mobile-open');
-      overlay.classList.add('mobile-show');
-    }
-}
-
-function handleDragValue(delta) {
-  const lyricsPanelStyle = document.getElementById('lyricsPanel').style;
-  switch (dragTarget) {
-    case 'fontSizeControl':
-      currentFontSize += delta;
-      currentFontSize = Math.max(12, Math.min(32, currentFontSize));
-      lyricsPanelStyle.fontSize = currentFontSize + 'px';
-      break;
-    case 'lineHeightControl':
-      currentLineHeight += delta * 0.1;
-      currentLineHeight = Math.max(1.0, Math.min(2.5, currentLineHeight));
-      lyricsPanelStyle.lineHeight = currentLineHeight;
-      break;
-    default:
-      console.log('Unhandled drag event: ', dragTarget);
-  }
-}
-
-document.querySelectorAll('.draggable')
-  .forEach(dragButton => {
-    dragButton.addEventListener('mouseover', () => {
-      dragButton.style.cursor = 'ns-resize';
-    });
-    dragButton.addEventListener('mouseout', () => {
-      if (!dragTarget) {
-        dragButton.style.cursor = '';
-      }
-    });
-    dragButton.addEventListener('mousedown', (e) => {
-      dragTarget = e.target.id;
-      startY = e.clientY;
-      document.body.style.cursor = 'ns-resize';
-      // Prevent text selection while dragging
-      document.body.style.userSelect = 'none';
-    });
-  });
-    
-let dragTarget = null;
-let startY = 0;
-
-document.addEventListener('mousemove', (e) => {
-  if (!dragTarget) return;
-  const deltaY = e.clientY - startY;
-  startY = e.clientY;
-  handleDragValue(deltaY, e.target);
-});
-    
-document.addEventListener('mouseup', () => {
-  if (dragTarget) {
-    dragTarget = null;
-    document.body.style.cursor = '';
-    document.body.style.userSelect = '';
-  }
-});
-
-function sendMessage(msg) {
-    console.log("Gesture:", msg);
-}
-// Block pinch zoom (multi-touch)
-document.addEventListener('touchstart', function(e) {
-    if (e.touches.length > 1) {
-        e.preventDefault();
-    }
-}, {
-    passive: false
-});
-
-// Block double-tap zoom
-let lastTouch = 0;
-document.addEventListener('touchend', function(e) {
-    const now = new Date()
-        .getTime();
-    if (now - lastTouch <= 300) {
-        e.preventDefault();
-    }
-    lastTouch = now;
-}, false);
-
-function makeResizablePanel() {
-  const resizer = document.getElementById('resizer');
-  const controlBar = document.getElementById('controlBar');
-  const mainContent = document.getElementById('mainContent');
-
-  let isDragging = false;
-
-  resizer.addEventListener('mousedown', function (e) {
-    isDragging = true;
-    document.body.style.cursor = 'ew-resize';
-    document.body.style.userSelect = 'none';
-  });
-
-  document.addEventListener('mousemove', function (e) {
-    if (!isDragging) return;
-    const mainRect = mainContent.getBoundingClientRect();
-    const offset = mainRect.right - e.clientX;
-    const newWidth = Math.min(Math.max(offset, 180), 600); // clamp to min/max
-    controlBar.style.width = newWidth + 'px';
-    console.log(newWidth, controlBar.style.width);
-    
-  });
-
-  document.addEventListener('mouseup', function () {
-    if (isDragging) {
-      isDragging = false;
-      document.body.style.cursor = '';
-      document.body.style.userSelect = '';
-    }
-  });
-}
-
-function setupClickAndSwipeSupport() {
+  let touchStartX = 0, touchStartY = 0;
   let touchMoved = false;
-  let startX = 0, startY = 0;
-  let lastTapTime = 0;
-  const doubleTapDelay = 300;
 
-  // Attach event listeners on .clickable elements
-  document.querySelectorAll('.clickable').forEach(el => {
-    if ('ontouchstart' in window || navigator.maxTouchPoints > 0) {
-      // Touch device: use touch events only
-      el.addEventListener('touchstart', onTouchStart, { passive: true });
-      el.addEventListener('touchmove', onTouchMove, { passive: true });
-      el.addEventListener('touchend', onTouchEnd);
+  let startDistX = null, startDistY = null;
+  let lastScaleX = 1, lastScaleY = 1;
+  let pinchActive = false;
+  let fontAdjusted = false, lineAdjusted = false;
+
+  const elements = ['titlebar', 'contentWrapper'];
+  elements.forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+
+    if (isTouch) {
+      if (scrollInterval) { clearInterval(scrollInterval) };
+      el.addEventListener('touchstart', e => {
+        if (e.touches.length === 2) {
+          e.preventDefault();
+          pinchActive = true;
+          fontAdjusted = false;
+          lineAdjusted = false;
+          const distances = getDistances(e.touches);
+          startDistX = distances.x;
+          startDistY = distances.y;
+          lastScaleX = 1;
+          lastScaleY = 1;
+        } else if (e.touches.length === 1) {
+          pinchActive = false;
+          touchMoved = false;
+          touchStartX = e.touches[0].clientX;
+          touchStartY = e.touches[0].clientY;
+        }
+      }, { passive: false });
+
+      el.addEventListener('touchmove', e => {
+        if (pinchActive && e.touches.length === 2 && startDistX && startDistY) {
+          e.preventDefault(); // prevent zooming
+          const curDist = getDistances(e.touches);
+          const scaleX = curDist.x / startDistX;
+          const scaleY = curDist.y / startDistY;
+
+          const deltaX = scaleX - lastScaleX;
+          const deltaY = scaleY - lastScaleY;
+
+          // Horizontal pinch for font size
+          if (Math.abs(deltaX) > 0.02) {
+            adjustFontSize(deltaX * 8);
+            lastScaleX = scaleX;
+            fontAdjusted = true;
+          }
+
+          // Vertical pinch for line spacing
+          if (Math.abs(deltaY) > 0.02) {
+            adjustLineSpacing(deltaY * 0.5);
+            lastScaleY = scaleY;
+            lineAdjusted = true;
+          }
+
+        } else if (e.touches.length === 1) {
+          const dx = e.touches[0].clientX - touchStartX;
+          const dy = e.touches[0].clientY - touchStartY;
+          if (Math.abs(dx) > 10 || Math.abs(dy) > 10) {
+            touchMoved = true;
+          }
+        }
+      }, { passive: false });
+
+      el.addEventListener('touchend', e => {
+        if (scrollInterval) {
+          scrollPosFloat = lyricsPanel.scrollTop;
+        }
+      
+        // Handle swipe gestures for song navigation
+        if (!pinchActive && e.changedTouches.length === 1 && touchMoved && !fontAdjusted && !lineAdjusted) {
+          const dx = e.changedTouches[0].clientX - touchStartX;
+          const dy = e.changedTouches[0].clientY - touchStartY;
+      
+          if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 80) {
+            if (dx > 0 && currentIndex > 0) {
+              loadSong(currentIndex - 1);
+            } else if (dx < 0 && currentIndex < playlist.length - 1) {
+              loadSong(currentIndex + 1);
+            }
+            return; // ✅ EXIT EARLY AFTER SWIPE
+          }
+        }
+
+       // Reset gesture flags
+        pinchActive = false;
+        fontAdjusted = false;
+        lineAdjusted = false;
+        startDistX = null;
+        startDistY = null;
+        lastScaleX = 1;
+        lastScaleY = 1;
+      
+        // ✅ Only call handleClick if it was truly a tap (no swipe or pinch)
+        if (!touchMoved && !fontAdjusted && !lineAdjusted) {
+          handleClick(id, false);
+        }
+      });
     } else {
-      // Mouse/desktop: use click events with timer for double click
-      el.addEventListener('click', onMouseClick);
+      // desktop
+      el.addEventListener('click', () => {
+        handleClick(id, false); // single click
+      });
     }
   });
 
-  // Touch handlers
-  function onTouchStart(e) {
-    startX = e.touches[0].clientX;
-    startY = e.touches[0].clientY;
-    touchMoved = false;
+  function getDistances(touches) {
+    const dx = touches[0].clientX - touches[1].clientX;
+    const dy = touches[0].clientY - touches[1].clientY;
+    return { x: Math.abs(dx), y: Math.abs(dy) };
   }
 
-  function onTouchMove(e) {
-    const dx = Math.abs(e.touches[0].clientX - startX);
-    const dy = Math.abs(e.touches[0].clientY - startY);
-    if (dx > 5 || dy > 5) {
-      touchMoved = true;
-    }
-  }
-
-  function onTouchEnd(e) {
-    if (touchMoved) {
-      // Drag/swipe, don't trigger tap
-      touchMoved = false;
-      return;
-    }
-
-    const currentTime = Date.now();
-    const tapLength = currentTime - lastTapTime;
-    lastTapTime = currentTime;
-    const target = e.currentTarget.id;
-
-    if (tapLength > 0 && tapLength < doubleTapDelay) {
-      // Double tap detected
-      handleClick(target, true);
-    } else {
-      // Single tap, delay firing in case of double tap
-      setTimeout(() => {
-        // Only fire single tap if no double tap happened
-        if (Date.now() - lastTapTime >= doubleTapDelay) {
-          handleClick(target, false);
-        }
-      }, doubleTapDelay);
-    }
-  }
-
-  // Mouse handlers
-  let clickTimer = null;
-
-  function onMouseClick(e) {
-    const target = e.currentTarget.id;
-
-    if (clickTimer) {
-      clearTimeout(clickTimer);
-      clickTimer = null;
-      handleClick(target, true); // double click
-    } else {
-      clickTimer = setTimeout(() => {
-        handleClick(target, false); // single click
-        clickTimer = null;
-      }, doubleTapDelay);
-    }
-  }
-
-  // Swipe logic on #contentWrapper only
-
-  const contentWrapper = document.getElementById('contentWrapper');
-  let swipeStartX = 0, swipeStartY = 0;
-  let swipeEndX = 0, swipeEndY = 0;
-  if (contentWrapper) {
-    contentWrapper.addEventListener('touchstart', e => {
-      swipeStartX = e.touches[0].clientX;
-      swipeStartY = e.touches[0].clientY;
-    }, { passive: true });
-
-    contentWrapper.addEventListener('touchend', e => {
-      swipeEndX = e.changedTouches[0].clientX;
-      swipeEndY = e.changedTouches[0].clientY;
-      handleSwipe();
-    }, { passive: true });
-  }
-
-  function handleSwipe() {
-    const deltaX = swipeEndX - swipeStartX;
-    const deltaY = swipeEndY - swipeStartY;
-    const minSwipeDistance = 50;
-
-    if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > minSwipeDistance) {
-      if (deltaX > 0) {
-        if (currentIndex > 0) loadSong(currentIndex - 1);
+  function handleClick(id, isDouble) {
+    if (id === 'titlebar') {
+      showPLaylist();
+    } else if (id === 'contentWrapper') {
+      // Toggle autoscroll
+      if (scrollInterval) {
+        cancelAutoScroll();
+      } else if (lyricsPanel.scrollTop + lyricsPanel.clientHeight >= lyricsPanel.scrollHeight) {
+        nextSong();
       } else {
-        if (currentIndex < playlist.length - 1) loadSong(currentIndex + 1);
+        startAutoScroll();
       }
     }
   }
 
-  // Your existing click handler logic
+  function adjustFontSize(delta) {
+    const panel = document.getElementById('lyricsPanel').style;
+    currentFontSize += delta;
+    currentFontSize = Math.max(10, Math.min(40, currentFontSize));
+    panel.fontSize = currentFontSize + 'px';
+    if (scrollInterval) {
+      scrollStep = calculateScrollStep();
+    }
+  }
 
-  function handleClick(target, doubleClick) {
-    switch (target) {
-      case 'titlebar':
-        doubleClick ? toggleMobilecontrolBar() : showPLaylist();
-        break;
-      case 'contentWrapper':
-        doubleClick ? handleAutoPlay('start') : handleAutoPlay('cancel');
-        break;
+  function adjustLineSpacing(delta) {
+    const panel = document.getElementById('lyricsPanel').style;
+    currentLineHeight += delta;
+    currentLineHeight = Math.max(0.8, Math.min(3.0, currentLineHeight));
+    panel.lineHeight = currentLineHeight;
+    if (scrollInterval) {
+      scrollStep = calculateScrollStep();
     }
   }
 }
