@@ -452,12 +452,14 @@ function updateSongInfo(song) {
 
     if (originalKey) {
       document.getElementById('upBtn').addEventListener('click', (e) => {
-        e.stopPropagation();
+        e.preventDefault();
+        e.stopImmediatePropagation();
         transposeUp();
       });
 
       document.getElementById('downBtn').addEventListener('click', (e) => {
-        e.stopPropagation();
+        e.preventDefault();
+        e.stopImmediatePropagation();
         transposeDown();
       });
     }
