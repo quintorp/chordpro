@@ -184,13 +184,13 @@ html, body {
 #colorWheelBtn {
   position: absolute;
   right: 4px;
-  background: conic-gradient(red, yellow, lime, cyan, blue, magenta, red);
+  background: linear-gradient(to right, red, yellow, lime, cyan, blue, magenta, red);
   user-select: none;
 }
 #themeToggleBtn {
   position: absolute;
   left: 4px;
-  background: linear-gradient(to right, black 0%, black 35%, #888 50%, white 65%, white 100%
+  background: linear-gradient(to right, black 0%, black 50%, white 50%, white 100%
   );  user-select: none;
 }
 /* Common button styles */
@@ -254,7 +254,7 @@ html, body {
   border-radius: 22px 0 0 0;
   font-size: 16px;
   font-weight: bold;
-  text-align: center;
+  text-align: left;
   line-height: 1.4;
   position: fixed;
   bottom: 0; right: 0;
