@@ -8,6 +8,8 @@ let scrollPosFloat = 0;
 let currentFontSize = 18;
 let currentLineHeight = 1.6;
 let playlistName = 'Playlist';
+let currentTransposition = 0;
+let originalKey = '';
 setThemeColor('#3498db');  
 
 // Initialize the app
@@ -418,19 +420,49 @@ function updateSongInfo(song) {
     let metadataHtml = '';
     if (capo) metadataHtml += `<span class="capo-info">Capo: ${capo}</span><br>`;
     if (chords) metadataHtml += `<span class="chords-info">Chords:<br>${chords}</span><br>`;
-    if (key) metadataHtml += `Key: ${key}<br>`;
     if (tempo) metadataHtml += `Tempo: ${tempo}<br>`;
     if (duration) {
         const formattedDuration = formatDuration(duration);
         if (formattedDuration) metadataHtml += `Duration: ${formattedDuration}`;
     }
 
-    songInfoBox.innerHTML = `
+    originalKey = key;
+    currentTransposition = 0;
+    const displayKey = originalKey ? transposeNote(originalKey, currentTransposition) : '';
+
+    let transposeHTML = '';
+    if (originalKey) {
+      transposeHTML = `
+        <div class="transpose-section">
+          <div style="font-size: 12px; color: #aaa;">KEY:</div>
+          <div class="transpose-controls">
+            <button class="transpose-arrow" id="upBtn" aria-label="Transpose up">▲</button>
+            <div class="transpose-key">${displayKey}</div>
+            <button class="transpose-arrow" id="downBtn" aria-label="Transpose down">▼</button>
+          </div>
+        </div>
+      `;
+    }
+
+    songInfoBox.innerHTML = `${transposeHTML}
         <div class="song-metadata">${metadataHtml}</div>
         <div class="song-next-info">${currentIndex + 1} of ${playlist.length}</div>
         <div class="song-next-info" onclick="loadSong(currentIndex + 1)">Next: ${nextTitle}</div>`;
     songInfoBox.classList.add('visible');
-      document.querySelector(".song-next-info").addEventListener("click", () => {
+
+    if (originalKey) {
+      document.getElementById('upBtn').addEventListener('click', (e) => {
+        e.stopPropagation();
+        transposeUp();
+      });
+
+      document.getElementById('downBtn').addEventListener('click', (e) => {
+        e.stopPropagation();
+        transposeDown();
+      });
+    }
+
+    document.querySelector(".song-next-info").addEventListener("click", () => {
       loadSong(currentIndex + 1);
     });
 }
@@ -444,6 +476,61 @@ function updatePlaylistHighlight() {
 
 function hideMe(el) {
   el.classList.remove('visible');
+}
+
+const noteSequence = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+
+function transposeNote(note, semitones) {
+  const parts = note.match(/^([A-G]#?)(.*)$/);
+  if (!parts) return note;
+
+  const baseNote = parts[1];
+  const modifier = parts[2];
+  const index = noteSequence.indexOf(baseNote);
+
+  if (index === -1) return note;
+
+  const newIndex = (index + semitones + 120) % 12;
+  return noteSequence[newIndex] + modifier;
+}
+
+function transposeUp() {
+  currentTransposition++;
+  transposeChords();
+  updateTransposedKey();
+}
+
+function transposeDown() {
+  currentTransposition--;
+  transposeChords();
+  updateTransposedKey();
+}
+
+function updateTransposedKey() {
+  const displayKey = originalKey ? transposeNote(originalKey, currentTransposition) : '';
+  const keyElement = document.querySelector('.transpose-key');
+  if (keyElement) {
+    keyElement.textContent = displayKey;
+  }
+}
+
+function transposeChords() {
+  const lyricsPanel = document.getElementById('lyricsPanel');
+  const song = playlist[currentIndex];
+
+  if (!song) return;
+
+  const lyrics = song.lyrics || song.content || song.text || song.chordpro || song.song_content;
+  if (!lyrics) return;
+
+  let formatted = lyrics;
+  formatted = formatted.replace(/\[([^\]]+)\]/g, (match, chord) => {
+    const transposed = transposeNote(chord, currentTransposition);
+    return `[${transposed}]`;
+  });
+
+  lyricsPanel.innerHTML = formatChordProSong({lyrics: formatted});
+  updateScrollbar();
 }
 
 // Keyboard bindings for foot controller
