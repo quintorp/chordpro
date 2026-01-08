@@ -450,18 +450,18 @@ function updateSongInfo(song) {
         <div class="song-next-info" onclick="loadSong(currentIndex + 1)">Next: ${nextTitle}</div>`;
     songInfoBox.classList.add('visible');
 
-    if (originalKey) {
+     if (originalKey) {
       document.getElementById('upBtn').addEventListener('click', (e) => {
         e.preventDefault();
         e.stopImmediatePropagation();
         transposeUp();
-      });
+      }, { passive: false });
 
       document.getElementById('downBtn').addEventListener('click', (e) => {
         e.preventDefault();
         e.stopImmediatePropagation();
         transposeDown();
-      });
+      }, { passive: false });
     }
 
     document.querySelector(".song-next-info").addEventListener("click", () => {
