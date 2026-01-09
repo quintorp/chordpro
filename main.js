@@ -433,23 +433,29 @@ function updateSongInfo(song) {
     let transposeHTML = '';
     if (originalKey) {
       transposeHTML = `
-        <div class="transpose-section" onclick="event.stopPropagation()">
-          <div class="transpose-label">KEY:</div>
-          <div>
-            <div class="transpose-controls">
-              <button class="transpose-arrow" id="upBtn" aria-label="Transpose up">▲</button>
-              <div class="transpose-key">${displayKey}</div>
-              <button class="transpose-arrow" id="downBtn" aria-label="Transpose down">▼</button>
-            </div>
+        <div class="transpose-section" onpointerdown="event.stopPropagation()" ontouchstart="event.stopPropagation()" onclick="event.stopPropagation()">
+          <div class="transpose-label">KEY</div>
+          <div class="transpose-controls">
+            <button class="transpose-arrow" id="upBtn" aria-label="Transpose up">▲</button>
+            <div class="transpose-key">${displayKey}</div>
+            <button class="transpose-arrow" id="downBtn" aria-label="Transpose down">▼</button>
           </div>
         </div>
       `;
     }
 
-    songInfoBox.innerHTML = `${transposeHTML}
-        <div class="song-metadata">${metadataHtml}</div>
-        <div class="song-next-info">${currentIndex + 1} of ${playlist.length}</div>
-        <div class="song-next-info" onclick="event.stopPropagation(); loadSong(currentIndex + 1)">Next: ${nextTitle}</div>`;
+    songInfoBox.innerHTML = `
+      <div class="info-box-layout">
+        <div class="info-box-left">
+          <div class="song-metadata">${metadataHtml}</div>
+          <div class="song-next-info">${currentIndex + 1} of ${playlist.length}</div>
+          <div class="song-next-info" onclick="event.stopPropagation(); loadSong(currentIndex + 1)">Next: ${nextTitle}</div>
+        </div>
+        <div class="info-box-right">
+          ${transposeHTML}
+        </div>
+      </div>
+    `;
     songInfoBox.classList.add('visible');
 
     if (originalKey) {
@@ -462,6 +468,10 @@ function updateSongInfo(song) {
           e.stopPropagation();
           transposeUp();
         });
+        upBtn.addEventListener('touchstart', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+        }, { passive: false });
       }
 
       if (downBtn) {
@@ -470,6 +480,10 @@ function updateSongInfo(song) {
           e.stopPropagation();
           transposeDown();
         });
+        downBtn.addEventListener('touchstart', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+        }, { passive: false });
       }
     }
 
