@@ -433,12 +433,14 @@ function updateSongInfo(song) {
     let transposeHTML = '';
     if (originalKey) {
       transposeHTML = `
-        <div class="transpose-section">
-          <div style="font-size: 12px; color: #aaa;">KEY:</div>
-          <div class="transpose-controls">
-            <button class="transpose-arrow" id="upBtn" aria-label="Transpose up">▲</button>
-            <div class="transpose-key">${displayKey}</div>
-            <button class="transpose-arrow" id="downBtn" aria-label="Transpose down">▼</button>
+        <div class="transpose-section" onclick="event.stopPropagation()">
+          <div class="transpose-label">KEY:</div>
+          <div>
+            <div class="transpose-controls">
+              <button class="transpose-arrow" id="upBtn" aria-label="Transpose up">▲</button>
+              <div class="transpose-key">${displayKey}</div>
+              <button class="transpose-arrow" id="downBtn" aria-label="Transpose down">▼</button>
+            </div>
           </div>
         </div>
       `;
@@ -447,21 +449,28 @@ function updateSongInfo(song) {
     songInfoBox.innerHTML = `${transposeHTML}
         <div class="song-metadata">${metadataHtml}</div>
         <div class="song-next-info">${currentIndex + 1} of ${playlist.length}</div>
-        <div class="song-next-info" onclick="loadSong(currentIndex + 1)">Next: ${nextTitle}</div>`;
+        <div class="song-next-info" onclick="event.stopPropagation(); loadSong(currentIndex + 1)">Next: ${nextTitle}</div>`;
     songInfoBox.classList.add('visible');
 
-     if (originalKey) {
-      document.getElementById('upBtn').addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopImmediatePropagation();
-        transposeUp();
-      }, { passive: false });
+    if (originalKey) {
+      const upBtn = document.getElementById('upBtn');
+      const downBtn = document.getElementById('downBtn');
 
-      document.getElementById('downBtn').addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopImmediatePropagation();
-        transposeDown();
-      }, { passive: false });
+      if (upBtn) {
+        upBtn.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          transposeUp();
+        });
+      }
+
+      if (downBtn) {
+        downBtn.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          transposeDown();
+        });
+      }
     }
 
     document.querySelector(".song-next-info").addEventListener("click", () => {
