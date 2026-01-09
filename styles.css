@@ -252,10 +252,6 @@ html, body {
 /* Song Info Box */
 #songInfoBox {
   border-radius: 22px 0 0 0;
-  font-size: 16px;
-  font-weight: bold;
-  text-align: left;
-  line-height: 1.4;
   position: fixed;
   bottom: 0; right: 0;
   width: 22vw;
@@ -269,30 +265,50 @@ html, body {
   transition: opacity 0.5s ease;
   z-index: 100;
   cursor: pointer;
+}
+
+.info-box-layout {
+  display: flex;
+  gap: 12px;
+  height: 100%;
+  font-size: 16px;
+  font-weight: bold;
+  text-align: left;
+  line-height: 1.4;
+}
+
+.info-box-left {
+  flex: 1;
   display: flex;
   flex-direction: column;
   gap: 10px;
 }
 
+.info-box-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
 .transpose-section {
   display: flex;
-  gap: 12px;
-  align-items: flex-start;
-  border-bottom: 1px solid rgba(255,255,255,0.2);
-  padding-bottom: 8px;
-  justify-content: space-between;
+  flex-direction: column;
+  gap: 4px;
+  align-items: center;
 }
 
 .transpose-label {
-  font-size: 12px;
+  font-size: 11px;
   color: #aaa;
-  margin-top: 2px;
+  margin-bottom: 2px;
+  font-weight: bold;
 }
 
 .transpose-controls {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 3px;
+  align-items: center;
 }
 
 .transpose-arrow {
@@ -311,7 +327,7 @@ html, body {
   transition: background-color 0.2s ease, color 0.2s ease;
   padding: 0;
   flex-shrink: 0;
-  touch-action: manipulation;
+  touch-action: none;
 }
 
 .transpose-arrow:hover {
@@ -320,11 +336,10 @@ html, body {
 }
 
 .transpose-key {
-  font-size: 14px;
+  font-size: 13px;
   color: var(--theme-color);
   font-weight: bold;
   text-align: center;
-  margin: 2px 0;
 }
 
 #songInfoBox.visible {
