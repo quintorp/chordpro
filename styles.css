@@ -276,36 +276,42 @@ html, body {
 
 .transpose-section {
   display: flex;
-  flex-direction: column;
-  gap: 6px;
-  align-items: center;
+  gap: 12px;
+  align-items: flex-start;
   border-bottom: 1px solid rgba(255,255,255,0.2);
   padding-bottom: 8px;
+  justify-content: space-between;
+}
+
+.transpose-label {
+  font-size: 12px;
+  color: #aaa;
+  margin-top: 2px;
 }
 
 .transpose-controls {
   display: flex;
-  gap: 6px;
-  justify-content: center;
-  align-items: center;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .transpose-arrow {
-  width: 28px;
-  height: 28px;
+  width: 42px;
+  height: 42px;
   background-color: transparent;
   color: var(--theme-color);
   border: 2px solid var(--theme-color);
   border-radius: 4px;
   cursor: pointer;
-  font-size: 16px;
+  font-size: 20px;
   font-weight: bold;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: background-color 0.2s ease, color 0.2s ease;
   padding: 0;
-  touch-action: none;
+  flex-shrink: 0;
+  touch-action: manipulation;
 }
 
 .transpose-arrow:hover {
@@ -316,7 +322,9 @@ html, body {
 .transpose-key {
   font-size: 14px;
   color: var(--theme-color);
-  min-width: 50px;
+  font-weight: bold;
+  text-align: center;
+  margin: 2px 0;
 }
 
 #songInfoBox.visible {
