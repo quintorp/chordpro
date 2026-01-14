@@ -123,7 +123,7 @@ html, body {
   background-color: rgba(0, 0, 0, 0.08);
 }
 
-.lyrics-section:last-child {
+.section-dark:last-child {
   padding-bottom: 20vh;
 }
 
@@ -184,13 +184,13 @@ html, body {
 #colorWheelBtn {
   position: absolute;
   right: 4px;
-  background: linear-gradient(to right, red, yellow, lime, cyan, blue, magenta, red);
+  background: conic-gradient(red, yellow, lime, cyan, blue, magenta, red);
   user-select: none;
 }
 #themeToggleBtn {
   position: absolute;
   left: 4px;
-  background: linear-gradient(to right, black 0%, black 50%, white 50%, white 100%
+  background: linear-gradient(to right, black 0%, black 35%, #888 50%, white 65%, white 100%
   );  user-select: none;
 }
 /* Common button styles */
@@ -252,10 +252,14 @@ html, body {
 /* Song Info Box */
 #songInfoBox {
   border-radius: 22px 0 0 0;
+  font-size: 16px;
+  font-weight: bold;
+  text-align: center;
+  line-height: 1.4;
   position: fixed;
   bottom: 0; right: 0;
-  width: 22vw;
-  min-width: 180px;
+  width: 33vw;
+  min-width: 220px;
   background-color: rgba(44,44,44,0.8);
   color: white;
   border-top: 3px solid var(--theme-color);
@@ -265,81 +269,6 @@ html, body {
   transition: opacity 0.5s ease;
   z-index: 100;
   cursor: pointer;
-}
-
-.info-box-layout {
-  display: flex;
-  gap: 12px;
-  height: 100%;
-  font-size: 16px;
-  font-weight: bold;
-  text-align: left;
-  line-height: 1.4;
-}
-
-.info-box-left {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.info-box-right {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-}
-
-.transpose-section {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  align-items: center;
-}
-
-.transpose-label {
-  font-size: 11px;
-  color: #aaa;
-  margin-bottom: 2px;
-  font-weight: bold;
-}
-
-.transpose-controls {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  align-items: center;
-}
-
-.transpose-arrow {
-  width: 42px;
-  height: 42px;
-  background-color: transparent;
-  color: var(--theme-color);
-  border: 2px solid var(--theme-color);
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 20px;
-  font-weight: bold;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background-color 0.2s ease, color 0.2s ease;
-  padding: 0;
-  flex-shrink: 0;
-  touch-action: none;
-}
-
-.transpose-arrow:hover {
-  background-color: var(--theme-color);
-  color: #2a2a2a;
-}
-
-.transpose-key {
-  font-size: 13px;
-  color: var(--theme-color);
-  font-weight: bold;
-  text-align: center;
 }
 
 #songInfoBox.visible {
