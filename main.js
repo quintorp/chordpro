@@ -607,6 +607,11 @@ function setupInteractionHandlers() {
       if (scrollInterval) { clearInterval(scrollInterval); }
 
       el.addEventListener('touchstart', e => {
+        // Prevent scroll toggle if clicking a button or interactable in the overlay
+        if (e.target.closest('#songInfoBox') || e.target.closest('.button')) {
+          return;
+        }
+
         if (e.touches.length === 2) {
           e.preventDefault();
           pinchActive = true;
@@ -655,6 +660,10 @@ function setupInteractionHandlers() {
       }, { passive: false });
 
       el.addEventListener('touchend', e => {
+        if (e.target.closest('#songInfoBox') || e.target.closest('.button')) {
+          return;
+        }
+
         if (scrollInterval) {
           scrollPosFloat = lyricsPanel.scrollTop;
         }
@@ -689,48 +698,35 @@ function setupInteractionHandlers() {
         }
 
         if (!touchMoved && !fontAdjusted && !lineAdjusted) {
-          handleClick(id, false);
+          handleClick(id);
         }
       });
     } else {
-      el.addEventListener('click', () => {
-        handleClick(id, false);
+      el.addEventListener('click', (e) => {
+        if (e.target.closest('#songInfoBox') || e.target.closest('.button')) {
+          return;
+        }
+        handleClick(id);
       });
     }
   });
 
-  function getDistances(touches) {
-    const dx = touches[0].clientX - touches[1].clientX;
-    const dy = touches[0].clientY - touches[1].clientY;
-    return { x: Math.abs(dx), y: Math.abs(dy) };
-  }
+  let lastClickTime = 0;
+  function handleClick(id) {
+    const now = Date.now();
+    const isDouble = now - lastClickTime < 300;
+    lastClickTime = now;
 
-  function updateAdjustments() {
-    const smoothingFactor = 0.2;
-    lastScale += (targetScale - lastScale) * smoothingFactor;
-
-    const delta = lastScale - 1;
-
-    if (pinchMode === 'font') {
-      if (Math.abs(delta) > 0.005) {
-        adjustFontSize(delta * 0.5); // adjust multiplier to your taste
-        fontAdjusted = true;
+    if (isDouble) {
+      if (id === 'contentWrapper') {
+        const lyricsPanel = document.getElementById('lyricsPanel');
+        lyricsPanel.scrollTop = 0;
+        scrollPosFloat = 0;
+        startAutoScroll();
       }
-    } else if (pinchMode === 'line') {
-      if (Math.abs(delta) > 0.005) {
-        adjustLineSpacing(delta * 0.02); // adjust multiplier to your taste
-        lineAdjusted = true;
-      }
+      return;
     }
 
-    if (pinchActive) {
-      animationFrameId = requestAnimationFrame(updateAdjustments);
-    } else {
-      animationFrameId = null;
-    }
-  }
-
-  function handleClick(id, isDouble) {
     if (id === 'titlebar') {
       showPLaylist();
     } else if (id === 'contentWrapper') {
