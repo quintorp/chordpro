@@ -25,10 +25,13 @@ Drag to rearrange list
   </div>
   
   <div id="playlistDropdown">
-    <button id="colorWheelBtn" class="button" aria-label="Pick theme color">
-      <input type="color" id="colorPickerBtn" aria-label="Pick theme color" />
-    </button>
-    <button id="themeToggleBtn" class="button" aria-label="Toggle Light/Dark Mode"></button>
+    <div id="playlistHeader">
+      <button id="themeToggleBtn" class="button" aria-label="Toggle Light/Dark Mode" style="left: 4px;"></button>
+      <button id="colorWheelBtn" class="button" aria-label="Pick theme color" style="right: 4px;">
+        <input type="color" id="colorPickerBtn" aria-label="Pick theme color" />
+      </button>
+    </div>
+    <div id="playlistItemsContainer"></div>
   </div> 
 
   <div id="contentWrapper" class='clickable'>
@@ -38,6 +41,7 @@ Drag to rearrange list
   </div>
   
   <input type="file" id="fileInput" accept=".csv">
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
   <script type="module" src="./main.js"></script>
-</body>
+<script src="https://replit-cdn.com/replit-pill/replit-pill.global.js" data-repl-id="fa153534-ccda-4928-8f3c-5876e9eebf34"></script></body>
 </html>
