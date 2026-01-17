@@ -450,7 +450,6 @@ function updateSongInfo(song) {
     const title = song.title || song.name || song.song || song.songname || 'Unknown Title';
     const capo = song.capo || song.capo_fret || '';
     const chords = song.chords || song.chord_progression || song.chord_sequence || '';
-    console.log(chords);
     const key = song.key || song.songkey || song.chord_key || '';
     const tempo = song.tempo || song.bpm || song.speed || '';
     const duration = song.duration || song.length || song.time || '';
@@ -464,7 +463,6 @@ function updateSongInfo(song) {
     let metadataHtml = '';
     if (capo) metadataHtml += `<span class="capo-info">Capo: ${capo}</span><br>`;
     if (chords) metadataHtml += `<span class="chords-info">Chords:<br>${chords}</span><br>`;
-    if (key) metadataHtml += `Key: ${key}<br>`;
     if (tempo) metadataHtml += `Tempo: ${tempo}<br>`;
     if (duration) {
         const formattedDuration = formatDuration(duration);
@@ -472,13 +470,87 @@ function updateSongInfo(song) {
     }
 
     songInfoBox.innerHTML = `
-        <div class="song-metadata">${metadataHtml}</div>
-        <div class="song-next-info">${currentIndex + 1} of ${playlist.length}</div>
-        <div class="song-next-info" onclick="loadSong(currentIndex + 1)">Next: ${nextTitle}</div>`;
+        <div style="display: flex; justify-content: space-between; align-items: stretch; text-align: left;">
+          <div style="flex: 1;">
+            <div class="song-metadata">${metadataHtml}</div>
+            <div class="song-next-info">${currentIndex + 1} of ${playlist.length}</div>
+            <div class="song-next-info" onclick="loadSong(currentIndex + 1)">Next: ${nextTitle}</div>
+          </div>
+          <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; margin-left: 15px; border-left: 1px solid rgba(255,255,255,0.1); padding-left: 15px;">
+            <div style="font-size: 10px; opacity: 0.7;">KEY</div>
+            <div id="transposeUp" style="cursor: pointer; font-size: 20px; padding: 5px;">▲</div>
+            <div id="currentKeyDisplay" style="font-size: 18px; font-weight: bold; color: var(--theme-color);">${key || '--'}</div>
+            <div id="transposeDown" style="cursor: pointer; font-size: 20px; padding: 5px;">▼</div>
+          </div>
+        </div>`;
+    
     songInfoBox.classList.add('visible');
-      document.querySelector(".song-next-info").addEventListener("click", () => {
-      loadSong(currentIndex + 1);
+    
+    // Add event listeners for transpose
+    const upBtn = document.getElementById('transposeUp');
+    const downBtn = document.getElementById('transposeDown');
+    if (upBtn) upBtn.onclick = (e) => { e.stopPropagation(); transposePlaylist(1); };
+    if (downBtn) downBtn.onclick = (e) => { e.stopPropagation(); transposePlaylist(-1); };
+
+    const nextInfo = songInfoBox.querySelector(".song-next-info");
+    if (nextInfo) {
+      nextInfo.addEventListener("click", (e) => {
+        e.stopPropagation();
+        loadSong(currentIndex + 1);
+      });
+    }
+}
+
+function transposePlaylist(semitones) {
+  const song = playlist[currentIndex];
+  if (!song) return;
+
+  const notes = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+  const flatNotes = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'];
+
+  function transposeNote(note) {
+    let isFlat = note.includes('b');
+    let index = notes.indexOf(note);
+    if (index === -1) index = flatNotes.indexOf(note);
+    if (index === -1) return note;
+
+    let newIndex = (index + semitones + 12) % 12;
+    return isFlat ? flatNotes[newIndex] : notes[newIndex];
+  }
+
+  function transposeChord(chord) {
+    // Regex to match root note and optional bass note after slash
+    return chord.replace(/([A-G][#b]?)/g, (match) => transposeNote(match));
+  }
+
+  // Transpose the song key
+  if (song.key || song.songkey || song.chord_key) {
+    const keyField = song.key ? 'key' : (song.songkey ? 'songkey' : 'chord_key');
+    song[keyField] = song[keyField].replace(/[A-G][#b]?/g, (match) => transposeNote(match));
+  }
+
+  // Transpose chords in metadata
+  if (song.chords || song.chord_progression || song.chord_sequence) {
+    const chordsField = song.chords ? 'chords' : (song.chord_progression ? 'chord_progression' : 'chord_sequence');
+    song[chordsField] = transposeChord(song[chordsField]);
+  }
+
+  // Transpose chords in lyrics
+  const lyricsField = ['lyrics', 'content', 'text', 'chordpro', 'song_content'].find(f => song[f]);
+  if (lyricsField && song[lyricsField]) {
+    song[lyricsField] = song[lyricsField].replace(/\[([^\]]+)\]/g, (match, chord) => {
+      return `[${transposeChord(chord)}]`;
     });
+  }
+
+  // Update UI
+  const lyricsPanel = document.getElementById('lyricsPanel');
+  lyricsPanel.innerHTML = formatChordProSong(song);
+  updateSongInfo(song);
+  
+  // Save changes
+  const newCsv = Papa.unparse(playlist);
+  localStorage.setItem('saved-playlist', newCsv);
 }
 
 function updatePlaylistHighlight() {
