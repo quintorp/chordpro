@@ -228,22 +228,68 @@ function parsePlaylist(csvData) {
     });
 }
 
+let sortableInstance = null;
+
 function populatePlaylistDropdown () {
-  document.querySelectorAll('#playlistDropdown .playlist-item').forEach(el => el.remove());
-  makePlaylistItem('LOAD NEW PLAYLIST', -1);
+  const container = document.getElementById('playlistItemsContainer');
+  container.innerHTML = '';
+  
+  const header = document.getElementById('playlistHeader');
+  // Remove existing load button if any
+  const existingLoad = header.querySelector('.loadPlaylistBtn');
+  if (existingLoad) existingLoad.remove();
+  
+  const loadBtn = document.createElement('div');
+  loadBtn.textContent = 'LOAD NEW PLAYLIST';
+  loadBtn.className = 'playlist-item loadPlaylistBtn';
+  loadBtn.style.textAlign = 'center';
+  loadBtn.style.fontWeight = 'bold';
+  loadBtn.onclick = () => loadSong(-1);
+  header.appendChild(loadBtn);
   
   playlist.forEach((song, index) => {
-    const title = song.title || song.name || song.song || song.songname || `Song ${index}`;
-    makePlaylistItem (title, index);
+    const title = (song.title || song.name || song.song || song.songname || `Song ${index}`).toString().trim();
+    if (title) {
+      makePlaylistItem (title, index);
+    }
   });
+
   function makePlaylistItem (title, index){
-    const dropdown = document.getElementById('playlistDropdown');
     const item = document.createElement('div');
     item.textContent = title;
     item.className = 'playlist-item';
-    index === -1 ? item.classList.add('loadPlaylistBtn') : null ;
-    item.onclick = () => loadSong(index);
-    dropdown.appendChild(item, index);
+    item.setAttribute('data-index', index);
+    item.onclick = (e) => {
+      // Don't trigger if dragging occurred
+      if (e.target.classList.contains('playlist-item')) {
+        loadSong(index);
+      }
+    };
+    container.appendChild(item);
+  }
+
+  // Initialize or update Sortable
+  if (window.Sortable) {
+    if (sortableInstance) {
+      sortableInstance.destroy();
+    }
+    sortableInstance = Sortable.create(container, {
+      animation: 150,
+      ghostClass: 'sortable-ghost',
+      onEnd: function (evt) {
+        const oldIndex = evt.oldIndex;
+        const newIndex = evt.newIndex;
+        if (oldIndex !== newIndex) {
+          const movedItem = playlist.splice(oldIndex, 1)[0];
+          playlist.splice(newIndex, 0, movedItem);
+          // Update CSV in localStorage
+          const newCsv = Papa.unparse(playlist);
+          localStorage.setItem('saved-playlist', newCsv);
+          // Re-populate to update indices
+          populatePlaylistDropdown();
+        }
+      }
+    });
   }
 }
 
