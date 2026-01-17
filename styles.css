@@ -274,21 +274,29 @@ html, body {
   border-radius: 22px 0 0 0;
   font-size: 16px;
   font-weight: bold;
-  text-align: center;
   line-height: 1.4;
   position: fixed;
   bottom: 0; right: 0;
-  width: 33vw;
-  min-width: 220px;
-  background-color: rgba(44,44,44,0.8);
+  width: 35vw;
+  min-width: 280px;
+  background-color: rgba(44,44,44,0.95);
   color: white;
   border-top: 3px solid var(--theme-color);
   border-left: 3px solid var(--theme-color);
-  padding: 10px;
+  padding: 15px;
   opacity: 1;
   transition: opacity 0.5s ease;
   z-index: 100;
-  cursor: pointer;
+  cursor: default;
+}
+
+#transposeUp:hover, #transposeDown:hover {
+  color: var(--theme-color);
+  transform: scale(1.2);
+}
+
+#transposeUp:active, #transposeDown:active {
+  transform: scale(0.9);
 }
 
 #songInfoBox.visible {
